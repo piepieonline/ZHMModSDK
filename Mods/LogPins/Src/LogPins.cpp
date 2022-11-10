@@ -235,6 +235,7 @@ void LogPins::ProcessSocketMessageQueue()
 				ss << "GetHeroPosition_" << s_HitmanSpatial->m_mTransform.Trans.x << "_" << s_HitmanSpatial->m_mTransform.Trans.y << "_" << s_HitmanSpatial->m_mTransform.Trans.z;
 				LogPins::AddToSendList(ss.str());
 			}
+			/*
 			else if (params[0] == "SetHeroPosition")
 			{
 				TEntityRef<ZHitman5> s_LocalHitman;
@@ -252,6 +253,7 @@ void LogPins::ProcessSocketMessageQueue()
 					std::stoul(params[7])
 				);
 			}
+			*/
 		}
 	}
 }
