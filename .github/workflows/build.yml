@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
+  release:
+    types: [ created ]
   pull_request:
     types: [ opened, synchronize, reopened ]
 
@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        buildtype: [ RelWithDebInfo, Debug ]
+        buildpreset: [ Release, Debug ]
 
     steps:
     - name: Get latest CMake and ninja
@@ -34,96 +34,67 @@ jobs:
 
     - name: Generate projects
       run: |
-        mkdir _build-${{ matrix.buildtype }}
-        cd _build-${{ matrix.buildtype }}
-        cmake -G Ninja `
-          -DCMAKE_BUILD_TYPE=${{ matrix.buildtype }} `
-          -DCMAKE_CXX_COMPILER=cl `
-          -DCMAKE_C_COMPILER=cl `
-          ..
+        cmake --preset x64-${{ matrix.buildpreset }} .
 
     - name: Build
       run: |
-        cmake --build _build-${{ matrix.buildtype }}
+        cmake --build _build/x64-${{ matrix.buildpreset }} --parallel
 
     - name: Copy SDK and loader artifacts
       run: |
-        cd _build-${{ matrix.buildtype }}
-        mkdir _sdk
-        Copy-Item ZHMModSDK/ZHMModSDK.dll -Destination _sdk/
-        Copy-Item ZHMModSDK/ZHMModSDK.pdb -Destination _sdk/
-        Copy-Item DirectInputProxy/dinput8.dll -Destination _sdk/
-        Copy-Item DirectInputProxy/dinput8.pdb -Destination _sdk/
-        Copy-Item ../LICENSE -Destination _sdk/
-
-    - name: Copy devloader artifacts
-      run: |
-        cd _build-${{ matrix.buildtype }}
-        mkdir _devloader
-        Copy-Item Tools/DevLoader/DevLoader.exe -Destination _devloader/
-        Copy-Item Tools/DevLoader/DevLoader.pdb -Destination _devloader/
-        Copy-Item ../LICENSE -Destination _sdk/
-
+        cd _build/x64-${{ matrix.buildpreset }}
+        mkdir _dist
+        Copy-Item ZHMModSDK/ZHMModSDK.dll -Destination _dist/
+        Copy-Item ZHMModSDK/ZHMModSDK.pdb -Destination _dist/
+        Copy-Item DirectInputProxy/dinput8.dll -Destination _dist/
+        Copy-Item DirectInputProxy/dinput8.pdb -Destination _dist/
+        Copy-Item ../../LICENSE -Destination _dist/
+        
     - name: Copy mod artifacts
       run: |
-        cd _build-${{ matrix.buildtype }}
-        mkdir _mods
-        Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".dll")) -Destination (Join-Path "_mods"  ($_.Name + ".dll")) }
-        Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".pdb")) -Destination (Join-Path "_mods"  ($_.Name + ".pdb")) }
-        Copy-Item ../LICENSE -Destination _mods/
+        cd _build/x64-${{ matrix.buildpreset }}
+        mkdir _dist/mods
+        Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".dll")) -Destination (Join-Path "_dist/mods"  ($_.Name + ".dll")) }
+        Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".pdb")) -Destination (Join-Path "_dist/mods"  ($_.Name + ".pdb")) }
 
-    - name: Archive SDK and loader
+    - name: Copy SDK dev artifacts
+      run: |
+        cd _build/x64-${{ matrix.buildpreset }}
+        mkdir _sdk
+        mkdir _sdk/bin
+        Copy-Item ZHMModSDK/ZHMModSDK.dll -Destination _sdk/bin/ZHMModSDK.dll
+        Copy-Item ZHMModSDK/ZHMModSDK.lib -Destination _sdk/bin/ZHMModSDK.lib
+        Copy-Item ZHMModSDK/ZHMModSDK.pdb -Destination _sdk/bin/ZHMModSDK.pdb
+        Copy-Item ../../ZHMModSDK/Include/ -Destination _sdk/include -Recurse
+        Copy-Item ../../External/imgui/source/imgui.h -Destination _sdk/include/imgui.h
+        Copy-Item ../../External/imgui/source/imconfig.h -Destination _sdk/include/imconfig.h
+        Copy-Item ../../External/spdlog/include/spdlog/ -Destination _sdk/include/spdlog -Recurse
+        Copy-Item ../../CMakeLists.dist.txt -Destination _sdk/CMakeLists.txt
+        Copy-Item ../../LICENSE -Destination _sdk/LICENSE
+
+    - name: Archive SDK, loader, and mods
       uses: actions/upload-artifact@v2
       with:
-        name: mod-loader-${{ matrix.buildtype }}
+        name: ZHMModSDK-${{ matrix.buildpreset }}
         path: |
-          _build-${{ matrix.buildtype }}/_sdk/*
+          _build/x64-${{ matrix.buildpreset }}/_dist/*
 
-    - name: Archive mods
+    - name: Archive SDK dev package
       uses: actions/upload-artifact@v2
       with:
-        name: mods-${{ matrix.buildtype }}
+        name: DevPkg-ZHMModSDK-${{ matrix.buildpreset }}
         path: |
-          _build-${{ matrix.buildtype }}/_mods/*
-
-    - name: Archive devloader
-      uses: actions/upload-artifact@v2
-      if: matrix.buildtype == 'Debug'
-      with:
-        name: devloader-${{ matrix.buildtype }}
-        path: |
-          _build-${{ matrix.buildtype }}/_devloader/*
-
-  create_release:
-    name: Create release
-    needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-
-    outputs:
-      upload_url: ${{ steps.create.outputs.upload_url }}
-
-    steps:
-    - name: Create release
-      id: create
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: ${{ github.ref }}
-        draft: false
-        prerelease: startsWith(github.ref, 'refs/tags/v0.')
+          _build/x64-${{ matrix.buildpreset }}/_sdk/*
 
   upload_release:
     name: Upload release artifacts
-    needs: create_release
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        artifact: [ mod-loader-RelWithDebInfo, mods-RelWithDebInfo, mod-loader-Debug, mods-Debug, devloader-Debug ]
+        artifact: [ ZHMModSDK-Release, ZHMModSDK-Debug, DevPkg-ZHMModSDK-Release, DevPkg-ZHMModSDK-Debug ]
 
     steps:
     - name: Download artifact
@@ -136,13 +107,19 @@ jobs:
       run: |
         cd ${{ matrix.artifact }}
         zip -r ${{ matrix.artifact }}.zip *
+        
+    - name: Get release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.2
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
     - name: Upload release assets
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        upload_url: ${{ steps.get_release.outputs.upload_url }}
         asset_path: ${{ matrix.artifact }}/${{ matrix.artifact }}.zip
         asset_name: ${{ matrix.artifact }}.zip
         asset_content_type: application/zip
