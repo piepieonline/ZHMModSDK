@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "IPluginInterface.h"
 
 #include <Glacier/ZEntity.h>
@@ -14,14 +16,18 @@ public:
 	void PreInit() override;
 	void OnEngineInitialized() override;
 	void OnDrawMenu() override;
+	void OnDrawUI(bool p_HasFocus) override;
 
 private:
 	void OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent);
+	void ToggleFreecam();
+	void EnableFreecam();
 	void DisableFreecam();
 
 private:
 	DEFINE_PLUGIN_DETOUR(FreeCam, bool, ZInputAction_Digital, ZInputAction* th, int a2);
 	DEFINE_PLUGIN_DETOUR(FreeCam, void, OnLoadScene, ZEntitySceneContext*, ZSceneData&);
+	DEFINE_PLUGIN_DETOUR(FreeCam, void, OnClearScene, ZEntitySceneContext*, bool);
 
 private:
 	volatile bool m_FreeCamActive;
@@ -31,6 +37,10 @@ private:
 	ZInputAction m_ToggleFreeCamAction;
 	ZInputAction m_FreezeFreeCamActionGc;
 	ZInputAction m_FreezeFreeCamActionKb;
+	bool m_ControlsVisible;
+	bool m_HasToggledFreecamBefore;
+	std::unordered_map<std::string, std::string> m_PcControls;
+	std::unordered_map<std::string, std::string> m_ControllerControls;
 };
 
 DEFINE_ZHM_PLUGIN(FreeCam)
