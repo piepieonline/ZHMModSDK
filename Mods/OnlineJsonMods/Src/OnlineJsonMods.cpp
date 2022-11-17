@@ -21,6 +21,26 @@ void OnlineJsonMods::PreInit()
 	Hooks::Http_WinHttpCallback->AddDetour(this, &OnlineJsonMods::WinHttpCallback);
 	Hooks::ZHttpResultDynamicObject_OnBufferReady->AddDetour(this, &OnlineJsonMods::ZHttpResultDynamicObject_OnBufferReady);
 
+	ReloadPatches();
+}
+
+void OnlineJsonMods::OnDrawMenu()
+{
+	if (ImGui::Button(OnlineJsonMods::overridingEnabled ? "DISABLE NETWORK OVERRIDES" : "ENABLE NETWORK OVERRIDES"))
+	{
+		OnlineJsonMods::overridingEnabled = !OnlineJsonMods::overridingEnabled;
+	}
+
+	if(ImGui::Button("RELOAD PATCHES"))
+	{
+		ReloadPatches();
+	}
+}
+
+void OnlineJsonMods::ReloadPatches()
+{
+	patches = nlohmann::json::array();
+
 	auto loadedMods = nlohmann::json::array();
 	try
 	{
@@ -37,7 +57,8 @@ void OnlineJsonMods::PreInit()
 
 	Logger::Info("OnlineJsonMods: Loaded Mods: {}", loadedMods.dump(2));
 
-	for (const auto& filePath : std::filesystem::directory_iterator(".\\Retail\\mods\\OnlineJsonMods\\"))
+	auto onlineJsonModsPath = std::filesystem::exists(".\\Retail\\mods\\OnlineJsonMods\\") ? std::filesystem::canonical(".\\Retail\\mods\\OnlineJsonMods\\") : std::filesystem::exists(".\\mods\\OnlineJsonMods\\") ? std::filesystem::canonical(".\\mods\\OnlineJsonMods\\") : std::filesystem::canonical(".\\OnlineJsonMods\\");
+	for (const auto& filePath : std::filesystem::directory_iterator(onlineJsonModsPath))
 	{
 		try
 		{
@@ -55,19 +76,6 @@ void OnlineJsonMods::PreInit()
 		}
 		catch (...) {}
 	}
-}
-
-void OnlineJsonMods::OnDrawMenu()
-{
-	/*
-	if (ImGui::Button(LogPins::sendingPinsEnabled ? "DISABLE PINS" : "ENABLE PINS"))
-	{
-		LogPins::sendingMessagesLock.lock_shared();
-		LogPins::sendingMessages.clear();
-		LogPins::sendingMessagesLock.unlock_shared();
-		LogPins::sendingPinsEnabled = !LogPins::sendingPinsEnabled;
-	}
-	*/
 }
 
 DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, WinHttpCallback, void* dwContext, void* hInternet, void* param_3, int dwInternetStatus, void* param_5, int length_param_6)
@@ -100,7 +108,7 @@ DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, ZHttpResultDynamicObject_OnBufferRea
 
 			for (auto& [patchSetKey, patchSet] : patches.items())
 			{
-				if ((patchSet["forceEnable"] || patchSet["modLoaded"]) && !patchSet["forceDisable"])
+				if (OnlineJsonMods::overridingEnabled && (patchSet["forceEnable"] || patchSet["modLoaded"]) && !patchSet["forceDisable"])
 				{
 					for (auto& [patchKey, patch] : patchSet["patches"].items())
 					{

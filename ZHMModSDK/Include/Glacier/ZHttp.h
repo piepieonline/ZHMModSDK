@@ -139,4 +139,6 @@ public:
 public:
 	PAD(0x38);
 	ZBuffer m_buffer;
+	PAD(0x2);
+	ZHttpUrl m_url;
 };

@@ -103,8 +103,8 @@ PATTERN_HOOK(
 
 // Look for D3D12.dll string
 PATTERN_HOOK(
-	"\x48\x89\x4C\x24\x08\x55\x53\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8D\xAC\x24\x58\xE2\xFF\xFF",
-	"xxxxxxxxxxxxxxxxxxxxxxxxx",
+	"\x48\x89\x4c\x24\x08\x55\x53\x56\x57\x41\x54\x41\x55\x41\x56\x41\x57\x48\x8d\xac\x24\x58\xe2\xff\xff\xb8\xa8\x1e\x00\x00\xe8\xdd\xea\x7b\x00",
+	"xxxxxxxxxxxxxxxxxxxx???xxx??xxx?xxx",
 	ZRenderDevice_ZRenderDevice,
 	ZRenderDevice* (ZRenderDevice* th)
 );
@@ -230,6 +230,7 @@ PATTERN_HOOK(
 	void(void* dwContext, void* hInternet, void* param_3, int dwInternetStatus, void* param_5, int param_6)
 );
 
+
 // Function at ??_7ZHttpResultDynamicObject@@6B@ index 4
 PATTERN_HOOK(
 	"\x48\x89\x5C\x24\x08\x48\x89\x6C\x24\x10\x48\x89\x74\x24\x18\x57\x48\x81\xEC\x00\x00\x00\x00\x80\x79\x50",
@@ -237,3 +238,22 @@ PATTERN_HOOK(
 	ZHttpResultDynamicObject_OnBufferReady,
 	void(ZHttpResultDynamicObject* th)
 )
+
+PATTERN_HOOK(
+	"\x48\x89\x74\x24\x18\x48\x89\x7c\x24\x20\x41\x54\x41\x56\x41\x57\x48\x83\xec\x20\x49\x8b\xf0\x41\xb9\x00\x04\x00\x00",
+	"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+	ZBufferOutputStream_Append, double(void* _this, char* incomingString, int length)
+);
+
+PATTERN_HOOK(
+	"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\xfa\x48\x8b\xd9\x48\x3b\xca",
+	"xxxxxxxxxxxxxxxxxxx",
+	FUN_140060ef0, void*(void* param1, void* param2)
+);
+
+/*
+MODULE_HOOK(
+	"winhttp.dll", "WinHttpSetStatusCallback",
+	WinHttpSetStatusCallback, void*(void* hInternet, void* lpfnInternetCallback, void* dwNotificationFlags, void* dwReserved)
+);
+*/

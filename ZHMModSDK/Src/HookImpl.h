@@ -202,7 +202,7 @@ protected:
 
 		if (p_Target == nullptr)
 		{
-			Logger::Error("Could not find address for hook '{}'. This probably means that the game was updated and the SDK requires changes.", p_HookName);
+			Logger::Error("Could not find address for hook '{}'. This probably means that the game was updated and the SDK requires changes. Base is '{}'", p_HookName, ModSDK::GetInstance()->GetModuleBase());
 			return;
 		}
 
@@ -245,7 +245,7 @@ protected:
 
 		if (p_Original == nullptr)
 		{
-			Logger::Error("Could not find address for hook '{}'. This probably means that the game was updated and the SDK requires changes.", p_HookName);
+			Logger::Error("Could not find address for hook '{}'. This probably means that the game was updated and the SDK requires changes. Base is '{}'.", p_HookName, ModSDK::GetInstance()->GetModuleBase());
 			return;
 		}
 
