@@ -112,9 +112,19 @@ DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, ZHttpResultDynamicObject_OnBufferRea
 				{
 					for (auto& [patchKey, patch] : patchSet["patches"].items())
 					{
-						auto matchTarget = nlohmann::json::json_pointer((std::string)patch.at("matchTarget"));
-						auto matchValue = (std::string)patch.at("matchValue");
-						if (incomingJson.value(matchTarget, "") == matchValue)
+						bool isValidMatch = true;
+						for (auto& [matcherKey, matcher] : patch["matchers"].items())
+						{
+							auto matchTarget = nlohmann::json::json_pointer((std::string)matcher.at("target"));
+							auto matchValue = (std::string)matcher.at("value");
+							if (incomingJson.value(matchTarget, "") != matchValue)
+							{
+								isValidMatch = false;
+								break;
+							}
+						}
+
+						if (isValidMatch)
 						{
 							auto randomPatchOption = patch.at("randomPatchOptions")[rand() % patch.at("randomPatchOptions").size()];
 
