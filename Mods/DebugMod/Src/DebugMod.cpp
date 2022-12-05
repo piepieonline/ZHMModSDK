@@ -13,8 +13,12 @@
 #include <Glacier/ZModule.h>
 #include <Glacier/ZHitman5.h>
 #include <Glacier/ZHttp.h>
+#include <Glacier/ZPhysics.h>
+#include <Glacier/ZSetpieceEntity.h>
 #include <Functions.h>
 #include <Globals.h>
+
+#include <ImGuizmo.h>
 
 #include <winhttp.h>
 #include <numbers>
@@ -25,10 +29,11 @@ DebugMod::~DebugMod()
 	Globals::GameLoopManager->UnregisterFrameUpdate(s_Delegate, 1, EUpdateMode::eUpdatePlayMode);
 }
 
-void DebugMod::PreInit()
+void DebugMod::Init()
 {
 	Hooks::ZHttpResultDynamicObject_OnBufferReady->AddDetour(this, &DebugMod::ZHttpBufferReady);
 	Hooks::Http_WinHttpCallback->AddDetour(this, &DebugMod::WinHttpCallback);
+	Hooks::ZEntitySceneContext_ClearScene->AddDetour(this, &DebugMod::OnClearScene);
 }
 
 void DebugMod::OnEngineInitialized()
@@ -51,38 +56,6 @@ void DebugMod::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent)
 	}*/
 }
 
-void DebugMod::MoveObject()
-{
-	if (!m_SelectedEntity)
-	{
-		Logger::Warn("No entity selected.");
-		return;
-	}
-
-	auto s_SpatialEntity = m_SelectedEntity.QueryInterface<ZSpatialEntity>();
-
-	if (!s_SpatialEntity)
-	{
-		Logger::Error("Not a spatial entity.");
-		return;
-	}
-
-	auto s_EntityWorldMatrix = s_SpatialEntity->GetWorldMatrix();
-
-	const auto s_CurrentCamera = Functions::GetCurrentCamera->Call();
-
-	if (!s_CurrentCamera)
-	{
-		Logger::Error("No camera spawned.");
-		return;
-	}
-
-	auto s_Transform = s_CurrentCamera->GetWorldMatrix();
-	s_EntityWorldMatrix.Trans = s_Transform.Trans - (s_Transform.ZAxis * float4::Distance(m_From, m_Hit));
-
-	s_SpatialEntity->SetWorldMatrix(s_EntityWorldMatrix);
-}
-
 void DebugMod::OnDrawMenu()
 {
 	if (ImGui::Button("DEBUG MENU"))
@@ -90,7 +63,7 @@ void DebugMod::OnDrawMenu()
 		m_MenuActive = !m_MenuActive;
 	}
 
-	/*if (ImGui::Button("BADABING BADABOOM"))
+	if (ImGui::Button("SPAWN CANON"))
 	{
 		auto s_Scene = Globals::Hitman5Module->m_pEntitySceneContext->m_pScene;
 
@@ -101,9 +74,10 @@ void DebugMod::OnDrawMenu()
 		else
 		{
 			//const auto s_ID = ResId<"[assembly:/_pro/environment/templates/props/containers/military_containers_a.template?/military_box_metal_e_00.entitytemplate].pc_entitytype">;
-			const auto s_ID = ResId<"[assembly:/deeznuts.entitytemplate].pc_entitytype">;
+			//const auto s_ID = ResId<"[assembly:/deeznuts.entitytemplate].pc_entitytype">;
 			//const auto s_ID = ResId<"[assembly:/templates/gameplay/ai2/actors.template?/npcactor.entitytemplate].pc_entitytype">;
 			//const auto s_ID = ResId<"[assembly:/_pro/characters/templates/hero/agent47/agent47.template?/agent47_default.entitytemplate].pc_entitytype">;
+			const auto s_ID = ResId<"[assembly:/_pro/design/setpieces/unique/setpiece_italy_unique.template?/setpiece_italy_unique_cannon_fortress_a.entitytemplate].pc_entitytype">;
 
 			Logger::Debug("Getting resource wew: {}", s_ID);
 
@@ -112,13 +86,13 @@ void DebugMod::OnDrawMenu()
 
 			Logger::Debug("Resource: {} {}", s_Resource.m_nResourceIndex, fmt::ptr(s_Resource.GetResource()));
 
-			const auto s_BrickID = ResId<"[assembly:/_pro/scenes/missions/paris/_scene_lumumba.brick].pc_entitytype">;
+			/*const auto s_BrickID = ResId<"[assembly:/_pro/scenes/missions/paris/_scene_lumumba.brick].pc_entitytype">;
 			Logger::Debug("Getting brick resource wew: {}", s_BrickID);
 
 			TResourcePtr<ZTemplateEntityFactory> s_BrickResource;
 			Globals::ResourceManager->GetResourcePtr(s_BrickResource, s_BrickID, 0);
 
-			Logger::Debug("Brick resource: {} {}", s_BrickResource.m_nResourceIndex, fmt::ptr(s_BrickResource.GetResource()));
+			Logger::Debug("Brick resource: {} {}", s_BrickResource.m_nResourceIndex, fmt::ptr(s_BrickResource.GetResource()));*/
 
 			if (!s_Resource)
 			{
@@ -136,10 +110,16 @@ void DebugMod::OnDrawMenu()
 				}
 				else
 				{
+					s_NewEntity.SetProperty("m_eRoomBehaviour", ZSpatialEntity::ERoomBehaviour::ROOM_DYNAMIC);
+
+					m_EntityMutex.lock();
+					m_SelectedEntity = s_NewEntity;
+					m_EntityMutex.unlock();
+
+					/*
 					TEntityRef<ZHitman5> s_LocalHitman;
 					Functions::ZPlayerRegistry_GetLocalPlayer->Call(Globals::PlayerRegistry, &s_LocalHitman);
-
-					/*auto s_Actor = s_NewEntity.QueryInterface<ZActor>();
+					auto s_Actor = s_NewEntity.QueryInterface<ZActor>();
 
 					Logger::Debug("Spawned entity {}!", fmt::ptr(s_Actor));
 
@@ -185,32 +165,124 @@ void DebugMod::OnDrawMenu()
 
 					m_SelectedEntity = s_NewEntity;
 
-					m_EntityMutex.unlock();
+					m_EntityMutex.unlock();*/
 				}
 			}
 		}
-	}*/
+	}
 }
 
-void DebugMod::DoRaycast(float4 p_From, float4 p_To)
+void DebugMod::OnDrawUI(bool p_HasFocus)
 {
+	ImGuizmo::BeginFrame();
+
+	DrawOptions(p_HasFocus);
+	DrawPositionBox(p_HasFocus);
+	DrawEntityBox(p_HasFocus);
+
+	auto s_ImgGuiIO = ImGui::GetIO();
+
+	if (p_HasFocus)
+	{
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !s_ImgGuiIO.WantCaptureMouse)
+		{
+			const auto s_MousePos = ImGui::GetMousePos();
+			
+			OnMouseDown(SVector2(s_MousePos.x, s_MousePos.y), !m_HoldingMouse);
+
+			m_HoldingMouse = true;
+		}
+		else
+		{
+			/*// If we stopped clicking, update collisions.
+			if (m_HoldingMouse && *Globals::CollisionManager)
+			{
+				m_EntityMutex.lock_shared();
+
+				if (m_SelectedEntity)
+				{
+					if (const auto s_SpatialEntity = m_SelectedEntity.QueryInterface<ZSpatialEntity>())
+					{
+						if (const auto s_PhysicsAspect = m_SelectedEntity.QueryInterface<ZStaticPhysicsAspect>())
+						{
+							Logger::Debug("Found physics aspect. Updating its transform.");
+							s_PhysicsAspect->m_pPhysicsObject->SetTransform(s_SpatialEntity->GetWorldMatrix());
+						}
+					}
+				}
+
+				m_EntityMutex.unlock_shared();
+			}*/
+
+			m_HoldingMouse = false;
+		}
+
+		if (ImGui::IsKeyPressed(s_ImgGuiIO.KeyMap[ImGuiKey_Tab]))
+		{
+			if (m_GizmoMode == ImGuizmo::TRANSLATE)
+				m_GizmoMode = ImGuizmo::ROTATE;
+			else if (m_GizmoMode == ImGuizmo::ROTATE)
+				m_GizmoMode = ImGuizmo::SCALE;
+			else if (m_GizmoMode == ImGuizmo::SCALE)
+				m_GizmoMode = ImGuizmo::TRANSLATE;
+		}
+	}
+
+	ImGuizmo::Enable(p_HasFocus);
+
+	m_EntityMutex.lock_shared();
+
+	if (m_SelectedEntity)
+	{
+		if (const auto s_CurrentCamera = Functions::GetCurrentCamera->Call())
+		{
+			if (const auto s_SpatialEntity = m_SelectedEntity.QueryInterface<ZSpatialEntity>())
+			{
+				auto s_ModelMatrix = s_SpatialEntity->GetWorldMatrix();
+				auto s_ViewMatrix = s_CurrentCamera->GetViewMatrix();
+				const SMatrix s_ProjectionMatrix = *s_CurrentCamera->GetProjectionMatrix();
+
+				ImGuizmo::SetRect(0, 0, s_ImgGuiIO.DisplaySize.x, s_ImgGuiIO.DisplaySize.y);
+
+				if (ImGuizmo::Manipulate(&s_ViewMatrix.XAxis.x, &s_ProjectionMatrix.XAxis.x, m_GizmoMode, ImGuizmo::MODE::WORLD, &s_ModelMatrix.XAxis.x))
+				{
+					s_SpatialEntity->SetWorldMatrix(s_ModelMatrix);
+
+					if (const auto s_PhysicsAspect = m_SelectedEntity.QueryInterface<ZStaticPhysicsAspect>())
+						s_PhysicsAspect->m_pPhysicsObject->SetTransform(s_SpatialEntity->GetWorldMatrix());
+				}
+			}
+		}
+	}
+
+	m_EntityMutex.unlock_shared();
+}
+
+void DebugMod::OnMouseDown(SVector2 p_Pos, bool p_FirstClick)
+{
+	SVector3 s_World;
+	SVector3 s_Direction;
+	SDK()->ScreenToWorld(p_Pos, s_World, s_Direction);
+
+	float4 s_DirectionVec(s_Direction.x, s_Direction.y, s_Direction.z, 1.f);
+
+	float4 s_From = float4(s_World.x, s_World.y, s_World.z, 1.f);
+	float4 s_To = s_From + (s_DirectionVec * 200.f);
+
 	if (!*Globals::CollisionManager)
 	{
 		Logger::Error("Collision manager not found.");
 		return;
 	}
 
-	m_From = p_From;
-	m_To = p_To;
-
 	ZRayQueryInput s_RayInput {
-		.m_vFrom = m_From,
-		.m_vTo = m_To,
+		.m_vFrom = s_From,
+		.m_vTo = s_To,
 	};
 
 	ZRayQueryOutput s_RayOutput {};
 
-	Logger::Debug("RayCasting from {} to {}.", m_From, m_To);
+	Logger::Debug("RayCasting from {} to {}.", s_From, s_To);
 
 	if (!(*Globals::CollisionManager)->RayCastClosestHit(s_RayInput, &s_RayOutput))
 	{
@@ -220,48 +292,40 @@ void DebugMod::DoRaycast(float4 p_From, float4 p_To)
 
 	Logger::Debug("Raycast result: {} {}", fmt::ptr(&s_RayOutput), s_RayOutput.m_vPosition);
 
+	m_From = s_From;
+	m_To = s_To;
 	m_Hit = s_RayOutput.m_vPosition;
 	m_Normal = s_RayOutput.m_vNormal;
 
-	m_EntityMutex.lock();
-	
-	if (s_RayOutput.m_BlockingEntity)
+	if (p_FirstClick)
 	{
-		const auto& s_Interfaces = *(*s_RayOutput.m_BlockingEntity.m_pEntity)->m_pInterfaces;
-		Logger::Trace("Hit entity of type '{}' with id '{:x}'.", s_Interfaces[0].m_pTypeId->typeInfo()->m_pTypeName, (*s_RayOutput.m_BlockingEntity.m_pEntity)->m_nEntityId);
-	}
+		m_EntityMutex.lock();
 
-	m_SelectedEntity = s_RayOutput.m_BlockingEntity;
-
-	m_EntityMutex.unlock();
-}
-
-
-void DebugMod::OnDrawUI(bool p_HasFocus)
-{
-	DrawOptions(p_HasFocus);
-	DrawPositionBox(p_HasFocus);
-	DrawEntityBox(p_HasFocus);
-
-	if (p_HasFocus)
-	{
-		auto s_ImgGuiIO = ImGui::GetIO();
-
-		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !s_ImgGuiIO.WantCaptureMouse)
+		if (s_RayOutput.m_BlockingEntity)
 		{
-			const auto s_MousePos = ImGui::GetMousePos();
-			
-			SVector3 s_World;
-			SVector3 s_Direction;
-			SDK()->ScreenToWorld(SVector2(s_MousePos.x, s_MousePos.y), s_World, s_Direction);
-
-			float4 s_DirectionVec(s_Direction.x, s_Direction.y, s_Direction.z, 1.f);
-			
-			float4 s_From = float4(s_World.x, s_World.y, s_World.z, 1.f);
-			float4 s_To = s_From + (s_DirectionVec * 200.f);
-
-			DoRaycast(s_From, s_To);
+			const auto& s_Interfaces = *(*s_RayOutput.m_BlockingEntity.m_pEntity)->m_pInterfaces;
+			Logger::Trace("Hit entity of type '{}' with id '{:x}'.", s_Interfaces[0].m_pTypeId->typeInfo()->m_pTypeName, (*s_RayOutput.m_BlockingEntity.m_pEntity)->m_nEntityId);
 		}
+
+		m_SelectedEntity = s_RayOutput.m_BlockingEntity;
+
+		m_EntityMutex.unlock();
+	}
+	else
+	{
+		/*m_EntityMutex.lock_shared();
+
+		if (m_SelectedEntity)
+		{
+			if (const auto s_SpatialEntity = m_SelectedEntity.QueryInterface<ZSpatialEntity>())
+			{
+				auto s_EntityWorldMatrix = s_SpatialEntity->GetWorldMatrix();				
+				s_EntityWorldMatrix.Trans = m_Hit;
+				s_SpatialEntity->SetWorldMatrix(s_EntityWorldMatrix);
+			}
+		}
+
+		m_EntityMutex.unlock_shared();*/
 	}
 }
 
@@ -290,6 +354,7 @@ void DebugMod::DrawPositionBox(bool p_HasFocus)
 {
 	ImGui::PushFont(SDK()->GetImGuiBlackFont());
 	const auto s_Showing = ImGui::Begin("POSITIONS");
+	ImGui::SetWindowCollapsed(true, ImGuiCond_FirstUseEver);
 	ImGui::PushFont(SDK()->GetImGuiRegularFont());
 
 	if (s_Showing)
@@ -437,11 +502,11 @@ void DebugMod::DrawPositionBox(bool p_HasFocus)
 	ImGui::PopFont();
 }
 
-
 void DebugMod::DrawEntityBox(bool p_HasFocus)
 {
 	ImGui::PushFont(SDK()->GetImGuiBlackFont());
 	const auto s_Showing = ImGui::Begin("SELECTED ENTITY");
+	ImGui::SetWindowCollapsed(true, ImGuiCond_FirstUseEver);
 	ImGui::PushFont(SDK()->GetImGuiRegularFont());
 
 	if (s_Showing)
@@ -458,6 +523,52 @@ void DebugMod::DrawEntityBox(bool p_HasFocus)
 
 			ImGui::TextUnformatted(fmt::format("Entity Type: {}", s_Interfaces[0].m_pTypeId->typeInfo()->m_pTypeName).c_str());
 			ImGui::TextUnformatted(fmt::format("Entity ID: {:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId).c_str());
+
+			std::string s_InterfacesStr;
+
+			for (const auto& s_Interface : s_Interfaces)
+			{
+				if (s_Interface.m_pTypeId->typeInfo() == nullptr)
+					continue;
+
+				if (!s_InterfacesStr.empty())
+					s_InterfacesStr += ", ";
+
+				s_InterfacesStr += s_Interface.m_pTypeId->typeInfo()->m_pTypeName;
+			}
+
+			ImGui::TextUnformatted(fmt::format("Entity Interfaces: {}", s_InterfacesStr).c_str());
+
+			std::string s_Properties01;
+
+			for (const auto& s_Property : *(*m_SelectedEntity.m_pEntity)->m_pProperties01)
+			{
+				if (!s_Property.m_pType->getPropertyInfo()->m_pName)
+					continue;
+
+				if (!s_Properties01.empty())
+					s_Properties01 += ", ";
+
+				s_Properties01 += s_Property.m_pType->getPropertyInfo()->m_pName;
+			}
+
+			ImGui::TextUnformatted(fmt::format("Entity Properties1: {}", s_Properties01).c_str());
+
+			std::string s_Properties02;
+
+			for (const auto& s_Property : *(*m_SelectedEntity.m_pEntity)->m_pProperties02)
+			{
+				if (!s_Property.m_pType->getPropertyInfo()->m_pName)
+					continue;
+
+				if (!s_Properties02.empty())
+					s_Properties02 += ", ";
+
+				s_Properties02 += s_Property.m_pType->getPropertyInfo()->m_pName;
+			}
+
+			ImGui::TextUnformatted(fmt::format("Entity Properties2: {}", s_Properties02).c_str());
+		
 
 			if (const auto s_Spatial = m_SelectedEntity.QueryInterface<ZSpatialEntity>())
 			{
@@ -526,6 +637,19 @@ void DebugMod::DrawEntityBox(bool p_HasFocus)
 				if (ImGui::Button("Copy ID"))
 				{
 					CopyToClipboard(fmt::format("{:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId));
+				}
+
+				if (ImGui::Button("Move to Hitman"))
+				{
+					TEntityRef<ZHitman5> s_LocalHitman;
+					Functions::ZPlayerRegistry_GetLocalPlayer->Call(Globals::PlayerRegistry, &s_LocalHitman);
+
+					auto s_HitmanSpatial = s_LocalHitman.m_ref.QueryInterface<ZSpatialEntity>();
+
+					s_Spatial->SetWorldMatrix(s_HitmanSpatial->GetWorldMatrix());
+
+					if (const auto s_PhysicsAspect = m_SelectedEntity.QueryInterface<ZStaticPhysicsAspect>())
+						s_PhysicsAspect->m_pPhysicsObject->SetTransform(s_Spatial->GetWorldMatrix());
 				}
 			}
 		}
@@ -640,7 +764,7 @@ void DebugMod::OnDraw3D(IRenderer* p_Renderer)
 
 	/*SVector2 s_StartPos;
 	if (p_Renderer->WorldToScreen(SVector3(m_From.x, m_From.y, m_From.z), s_StartPos))
-		p_Renderer->DrawText2D("0", s_StartPos, SVector4(1, 1, 1, 1), 0, 0.5f);*/
+		p_Renderer->DrawText2D("0", s_StartPos, SVector4(1, 1, 1, 1), 0, 0.5f);
 
 	SVector2 s_EndPos;
 	if (p_Renderer->WorldToScreen(SVector3(m_To.x, m_To.y, m_To.z), s_EndPos))
@@ -650,17 +774,17 @@ void DebugMod::OnDraw3D(IRenderer* p_Renderer)
 	if (p_Renderer->WorldToScreen(SVector3(m_Hit.x, m_Hit.y, m_Hit.z), s_HitPos))
 		p_Renderer->DrawText2D("x", s_HitPos, SVector4(1, 1, 1, 1), 0, 0.25f);
 
-	/*p_Renderer->DrawBox3D(
+	p_Renderer->DrawBox3D(
 		SVector3(m_From.x - 0.05f, m_From.y - 0.05f, m_From.z - 0.05f),
 		SVector3(m_From.x + 0.05f, m_From.y + 0.05f, m_From.z + 0.05f),
 		SVector4(0.f, 0.f, 1.f, 1.0f)
-	);*/
+	);
 
-	/*p_Renderer->DrawBox3D(
+	p_Renderer->DrawBox3D(
 		SVector3(m_To.x - 0.05f, m_To.y - 0.05f, m_To.z - 0.05f),
 		SVector3(m_To.x + 0.05f, m_To.y + 0.05f, m_To.z + 0.05f),
 		SVector4(0.f, 1.f, 0.f, 1.0f)
-	);*/
+	);
 
 	p_Renderer->DrawBox3D(
 		SVector3(m_Hit.x - 0.01f, m_Hit.y - 0.01f, m_Hit.z - 0.01f),
@@ -675,7 +799,7 @@ void DebugMod::OnDraw3D(IRenderer* p_Renderer)
 		SVector4(1.f, 1.f, 1.f, 1.f)
 	);
 
-	/*p_Renderer->DrawLine3D(
+	p_Renderer->DrawLine3D(
 		SVector3(m_Hit.x + (m_Normal.x * 0.15f), m_From.y + (m_Normal.y * 0.15f), m_From.z + (m_Normal.z * 0.15f)),
 		SVector3(m_Hit.x, m_Hit.y, m_Hit.z),
 		SVector4(0.63f, 0.13f, 0.94f, 1.f),
@@ -707,6 +831,15 @@ DECLARE_PLUGIN_DETOUR(DebugMod, void, WinHttpCallback, void* dwContext, void* hI
 		WinHttpAddRequestHeaders(hInternet, L"Accept-Encoding: identity", (ULONG)-1L, WINHTTP_ADDREQ_FLAG_REPLACE);
 		Logger::Info("header set");
 	}*/
+
+	return HookResult<void>(HookAction::Continue());
+}
+
+DECLARE_PLUGIN_DETOUR(DebugMod, void, OnClearScene, ZEntitySceneContext* th, bool fullyClear)
+{
+	m_EntityMutex.lock();
+	m_SelectedEntity = ZEntityRef();
+	m_EntityMutex.unlock();
 
 	return HookResult<void>(HookAction::Continue());
 }

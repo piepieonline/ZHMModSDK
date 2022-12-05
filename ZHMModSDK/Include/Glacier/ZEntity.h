@@ -22,16 +22,16 @@ class ZPinFunctions
 {
 public:
 	void (*trigger)();
-	void (*unk00)();
-	void (*unk01)();
-	void (*unk02)();
+	void (*unk1)();
+	void (*unk2)();
+	void (*unk3)();
 	int32_t m_nPin;
 };
 
 class ZPinData
 {
 public:
-	int32_t m_unk00;
+	int32_t m_unk0x0;
 	IType* m_pType;
 };
 
@@ -41,7 +41,7 @@ public:
 	int64_t m_nObjectOffset;
 	ZPinFunctions* m_pPinFunctions;
 	ZPinData* m_pPinData;
-	void* m_unk00;
+	void* m_unk0x18;
 	int32_t m_nPin;
 };
 
@@ -75,7 +75,7 @@ public:
 class ZEntityType
 {
 public:
-	uint64_t m_nUnk01;
+	uint64_t m_nUnk0x0;
 	TArray<ZEntityProperty>* m_pProperties01;
 	TArray<ZEntityProperty>* m_pProperties02;
 	PAD(0x08);
@@ -97,8 +97,8 @@ public:
 	virtual ZEntityRef* GetID(ZEntityRef* result) = 0;
 	virtual void Activate(int) = 0;
 	virtual void Deactivate(int) = 0;
-	virtual void ZEntityImpl_unk08() = 0;
-	virtual void ZEntityImpl_unk09() = 0;
+	virtual void ZEntityImpl_unk8() = 0;
+	virtual void ZEntityImpl_unk9() = 0;
 	virtual void ZEntityImpl_unk10() = 0;
 	virtual void ZEntityImpl_unk11() = 0;
 	virtual void ZEntityImpl_unk12() = 0;
@@ -112,8 +112,8 @@ public:
 
 public:
 	ZEntityType* m_pType;
-	uint32_t m_unk00;
-	uint32_t m_unk01;
+	uint32_t m_unk0x10;
+	uint32_t m_unk0x14;
 };
 
 class ZEntityRef
@@ -252,6 +252,50 @@ public:
 	{
 		return std::move(GetProperty(Hash::Crc32(p_PropertyName.c_str(), p_PropertyName.size())));
 	}*/
+
+	template <typename T>
+	ZVariant<T> GetProperty(const uint32_t nPropertyID) const
+	{
+		ZObjectRef property;
+
+		for (uint32_t i = 0; i < m_pEntity[0]->m_pProperties01->size(); ++i)
+		{
+			ZEntityProperty* entityProperty = &m_pEntity[0]->m_pProperties01->operator[](i);
+
+			if (entityProperty->m_nPropertyId == nPropertyID)
+			{
+				ZClassProperty* classProperty = entityProperty->m_pType->getPropertyInfo();
+				char* property2 = reinterpret_cast<char*>(m_pEntity) + entityProperty->m_nOffset;
+
+				uint16_t typeSize = classProperty->m_pType->typeInfo()->m_nTypeSize;
+				uint16_t typeAlignment = classProperty->m_pType->typeInfo()->m_nTypeAlignment;
+				auto* data = (*Globals::MemoryManager)->m_pNormalAllocator->AllocateAligned(typeSize, typeAlignment);;
+
+				if (classProperty->m_nFlags & EPropertyInfoFlags::E_HAS_GETTER_SETTER)
+				{
+					classProperty->get(property2, data, classProperty->m_nOffset);
+				}
+				else
+				{
+					classProperty->m_pType->typeInfo()->m_pTypeFunctions->copyConstruct(data, property2);
+				}
+
+				property.Assign(classProperty->m_pType, data);
+
+				break;
+			}
+		}
+
+		return std::move(ZVariant<T>(property));
+	}
+
+	template <typename T>
+	ZVariant<T> GetProperty(const ZString& p_PropertyName) const
+	{
+		uint32_t nPropertyID = Hash::Crc32(p_PropertyName.c_str(), p_PropertyName.size());
+
+		return std::move(GetProperty<T>(nPropertyID));
+	}
 
 	bool SetProperty(uint32_t p_PropertyId, const ZObjectRef& p_Value, bool p_InvokeChangeHandlers = true)
 	{
