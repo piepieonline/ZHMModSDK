@@ -82,7 +82,6 @@ void LogPins::PreInit()
 void LogPins::OnDraw3D(IRenderer* p_Renderer)
 {
 	LogPins::ProcessSocketMessageQueue();
-/*
 
 	for (int i = lastKnownActorId; i < *Globals::NextActorId; ++i)
 	{
@@ -92,7 +91,6 @@ void LogPins::OnDraw3D(IRenderer* p_Renderer)
 
 		LogPins::UpdateTrackableMap(s_Ref);
 	}
-*/
 
 	m_EntityMutex.lock_shared();
 
