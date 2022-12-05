@@ -131,7 +131,17 @@ class ZHttpRequestWindows :
 
 };
 
-class ZHttpResultDynamicObject
+class ZHttpResultBase
+{
+public:
+	virtual void IRenderDestinationEntity_unk01() = 0;
+	virtual void IRenderDestinationEntity_unk02() = 0;
+	virtual void IRenderDestinationEntity_unk03() = 0;
+	virtual void IRenderDestinationEntity_unk04() = 0;
+	virtual void Decrypt() = 0;
+};
+
+class ZHttpResultDynamicObject : public ZHttpResultBase
 {
 public:
 	virtual ~ZHttpResultDynamicObject() = default;

@@ -185,7 +185,7 @@ void LogPins::ProcessSocketMessageQueue()
 					std::stod(params[7].c_str())
 				);
 
-				Matrix43ToSMatrix(newTrans, &coverPlanePos);
+				coverPlanePos = SMatrix(newTrans);
 
 				drawCoverPlane = true;
 			}
