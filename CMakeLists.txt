@@ -6,6 +6,9 @@ endif()
 
 project(ZHMMods CXX)
 
+set(CTT OFF CACHE BOOL "Build with support for the Hitman 3 CTT.")
+set(INSTALL_PATH "" CACHE PATH "Path to Hitman 3 retail folder to install the SDK in.")
+
 set(CMAKE_CXX_STANDARD 23)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -19,6 +22,7 @@ endif()
 add_subdirectory("External/spdlog")
 add_subdirectory("External/minhook")
 add_subdirectory("External/imgui")
+add_subdirectory("External/imguizmo")
 add_subdirectory("External/DirectXTK12")
 
 # Core modules.
@@ -58,3 +62,13 @@ add_dependencies(DevLoader
 	DiscordRichPresence
 	LogPins
 )
+
+if (EXISTS "${INSTALL_PATH}")
+	install(TARGETS ZHMModSDK DirectInputProxy 
+		RUNTIME DESTINATION "${INSTALL_PATH}"
+	)
+
+	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins
+		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
+	)
+endif()
