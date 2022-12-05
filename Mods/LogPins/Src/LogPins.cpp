@@ -33,7 +33,7 @@ std::mutex LogPins::sendingMutex;
 std::condition_variable LogPins::sendingCV;
 bool LogPins::sendingPinsEnabled = false;
 
-void LogPins::PreInit()
+void LogPins::Init()
 {
 	Hooks::SignalInputPin->AddDetour(this, &LogPins::SignalInputPin);
 	Hooks::SignalOutputPin->AddDetour(this, &LogPins::SignalOutputPin);

@@ -16,7 +16,7 @@
 
 #pragma comment(lib,"winhttp.lib")
 
-void OnlineJsonMods::PreInit()
+void OnlineJsonMods::Init()
 {
 	Hooks::Http_WinHttpCallback->AddDetour(this, &OnlineJsonMods::WinHttpCallback);
 	Hooks::ZHttpResultDynamicObject_OnBufferReady->AddDetour(this, &OnlineJsonMods::ZHttpResultDynamicObject_OnBufferReady);
@@ -31,7 +31,7 @@ void OnlineJsonMods::OnDrawMenu()
 		OnlineJsonMods::overridingEnabled = !OnlineJsonMods::overridingEnabled;
 	}
 
-	if(ImGui::Button("RELOAD PATCHES"))
+	if (ImGui::Button("RELOAD PATCHES"))
 	{
 		ReloadPatches();
 	}

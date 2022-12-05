@@ -14,7 +14,7 @@ class IBoolCondition;
 class LogPins : public IPluginInterface
 {
 public:
-	void PreInit() override;
+	void Init() override;
 	void OnDraw3D(IRenderer* p_Renderer) override;
 	void OnDrawMenu() override;
 

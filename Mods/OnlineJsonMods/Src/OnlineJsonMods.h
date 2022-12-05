@@ -6,7 +6,7 @@
 class OnlineJsonMods : public IPluginInterface
 {
 public:
-	void PreInit() override;
+	void Init() override;
 	void OnDrawMenu() override;
 
 private:
