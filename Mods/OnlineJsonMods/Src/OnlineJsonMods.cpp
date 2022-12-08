@@ -14,6 +14,11 @@
 
 #include <Glacier/ZHttp.h>
 
+#include <gzip/compress.hpp>
+#include <gzip/config.hpp>
+#include <gzip/decompress.hpp>
+#include <gzip/utils.hpp>
+
 #pragma comment(lib,"winhttp.lib")
 
 void OnlineJsonMods::Init()
@@ -89,7 +94,7 @@ DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, WinHttpCallback, void* dwContext, vo
 		Logger::Info("option set");
 		*/
 
-		WinHttpAddRequestHeaders(hInternet, L"Accept-Encoding: identity", (ULONG)-1L, WINHTTP_ADDREQ_FLAG_REPLACE);
+		// WinHttpAddRequestHeaders(hInternet, L"Accept-Encoding: identity", (ULONG)-1L, WINHTTP_ADDREQ_FLAG_REPLACE);
 		// Logger::Info("header set");
 	}
 
@@ -100,7 +105,18 @@ DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, ZHttpResultDynamicObject_OnBufferRea
 {
 	if (th->m_buffer.size() > 0)
 	{
-		std::string incoming(static_cast<char*>(th->m_buffer.data()), th->m_buffer.size());
+		std::string incoming = "";
+		bool wasCompressed = gzip::is_compressed(static_cast<char*>(th->m_buffer.data()), th->m_buffer.size());
+
+		if (wasCompressed)
+		{
+			// Decompress returns a std::string and decodes both zlib and gzip
+			incoming = gzip::decompress(static_cast<char*>(th->m_buffer.data()), th->m_buffer.size());
+		}
+		else
+		{
+			incoming = std::string(static_cast<char*>(th->m_buffer.data()), th->m_buffer.size());
+		}
 
 		try
 		{
@@ -130,10 +146,17 @@ DECLARE_PLUGIN_DETOUR(OnlineJsonMods, void, ZHttpResultDynamicObject_OnBufferRea
 
 							auto outgoingJson = incomingJson.patch(randomPatchOption);
 
-							Logger::Info("Before replacing");
+							Logger::Info("OnlineJsonMods: Before replacing");
 							auto newValue = outgoingJson.dump();
+
+							if (wasCompressed)
+							{
+								Logger::Info("OnlineJsonMods: Recompressing");
+								newValue = gzip::compress(newValue.c_str(), newValue.size());
+							}
+
 							th->m_buffer = ZBuffer::FromData(newValue);
-							Logger::Info("After replacing");
+							Logger::Info("OnlineJsonMods: After replacing");
 						}
 					}
 				}

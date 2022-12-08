@@ -3,6 +3,9 @@
 
 A modding SDK and mod loader for HITMAN 3.
 
+## Fork Note:
+This fork includes zlib, but it won't build by default. Once the repo and submodules have been pulled, `External\zlib\zconf.h.included` needs to be cloned and named `External\zlib\zconf.h`.
+
 ![build status](https://github.com/OrfeasZ/ZHMModSDK/workflows/Build/badge.svg)
 
 ## Description
