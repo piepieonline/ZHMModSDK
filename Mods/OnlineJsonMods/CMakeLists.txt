@@ -1,5 +1,7 @@
 ﻿cmake_minimum_required(VERSION 3.12)
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../../External/zlib/zconf.h.included" "${CMAKE_CURRENT_SOURCE_DIR}/../../External/zlib/zconf.h" COPYONLY)
+
 file(GLOB_RECURSE SRC_FILES
 	CONFIGURE_DEPENDS
 	Src/*.cpp
@@ -18,4 +20,5 @@ target_include_directories(OnlineJsonMods PRIVATE
 
 target_link_libraries(OnlineJsonMods PRIVATE
 	ZHMModSDK
+	zlib
 )

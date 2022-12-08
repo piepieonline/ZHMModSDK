@@ -62,6 +62,7 @@ add_dependencies(DevLoader
 	FreeCam
 	DiscordRichPresence
 	LogPins
+	OnlineJsonMods
 )
 
 if (EXISTS "${INSTALL_PATH}")
@@ -69,7 +70,7 @@ if (EXISTS "${INSTALL_PATH}")
 		RUNTIME DESTINATION "${INSTALL_PATH}"
 	)
 
-	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins
+	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins OnlineJsonMods
 		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
 	)
 endif()
