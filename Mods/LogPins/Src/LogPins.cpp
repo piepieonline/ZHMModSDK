@@ -232,7 +232,7 @@ void LogPins::ProcessSocketMessageQueue()
 				const auto s_HitmanSpatial = s_LocalHitman.m_ref.QueryInterface<ZSpatialEntity>();
 
 				std::ostringstream ss;
-				ss << "GetHeroPosition_" << s_HitmanSpatial->m_mTransform.Trans.x << "_" << s_HitmanSpatial->m_mTransform.Trans.y << "_" << s_HitmanSpatial->m_mTransform.Trans.z;
+				ss << "GetHeroPosition_" << s_HitmanSpatial->GetWorldMatrix().Trans.x << "_" << s_HitmanSpatial->GetWorldMatrix().Trans.y << "_" << s_HitmanSpatial->GetWorldMatrix().Trans.z;
 				LogPins::AddToSendList(ss.str());
 			}
 			/*
