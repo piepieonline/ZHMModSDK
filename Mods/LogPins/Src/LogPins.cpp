@@ -10,6 +10,7 @@
 #include <Glacier/ZSpatialEntity.h>
 #include <Glacier/ZObject.h>
 #include <Glacier/ZActor.h>
+#include <Glacier/ZCollision.h>
 
 #define DEFAULT_SERVER "127.0.0.1"
 #define DEFAULT_BUFLEN 512
@@ -372,8 +373,82 @@ void LogPins::OnDrawMenu()
 	}
 }
 
+void LogPins::OnDrawUI(bool p_HasFocus)
+{
+	auto s_ImgGuiIO = ImGui::GetIO();
+
+	if (p_HasFocus)
+	{
+		if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !s_ImgGuiIO.WantCaptureMouse)
+		{
+			const auto s_MousePos = ImGui::GetMousePos();
+
+			OnMouseDown(SVector2(s_MousePos.x, s_MousePos.y), !m_HoldingMouse);
+
+			m_HoldingMouse = true;
+		}
+		else
+		{
+			m_HoldingMouse = false;
+		}
+	}
+}
+
+void LogPins::OnMouseDown(SVector2 p_Pos, bool p_FirstClick)
+{
+	SVector3 s_World;
+	SVector3 s_Direction;
+	SDK()->ScreenToWorld(p_Pos, s_World, s_Direction);
+
+	float4 s_DirectionVec(s_Direction.x, s_Direction.y, s_Direction.z, 1.f);
+
+	float4 s_From = float4(s_World.x, s_World.y, s_World.z, 1.f);
+	float4 s_To = s_From + (s_DirectionVec * 200.f);
+
+	if (!*Globals::CollisionManager)
+	{
+		Logger::Error("Collision manager not found.");
+		return;
+	}
+
+	ZRayQueryInput s_RayInput {
+		.m_vFrom = s_From,
+		.m_vTo = s_To,
+	};
+
+	ZRayQueryOutput s_RayOutput {};
+
+	Logger::Debug("RayCasting from {} to {}.", s_From, s_To);
+
+	if (!(*Globals::CollisionManager)->RayCastClosestHit(s_RayInput, &s_RayOutput))
+	{
+		Logger::Error("Raycast failed.");
+		return;
+	}
+
+	Logger::Debug("Raycast result: {} {}", fmt::ptr(&s_RayOutput), s_RayOutput.m_vPosition);
+
+	if (p_FirstClick)
+	{
+		if (s_RayOutput.m_BlockingEntity)
+		{
+			const auto& s_Interfaces = *(*s_RayOutput.m_BlockingEntity.m_pEntity)->m_pInterfaces;
+			Logger::Trace("Adding entity with id '{:x}' to TrackableMap.", (*s_RayOutput.m_BlockingEntity.m_pEntity)->m_nEntityId);
+		}
+
+		m_EntityMutex.lock();
+		entityToTrack = 0;
+		m_EntityMutex.unlock();
+
+		UpdateTrackableMap(s_RayOutput.m_BlockingEntity);
+	}
+}
+
+
 void LogPins::UpdateTrackableMap(ZEntityRef entityRef) // , const ZObjectRef& objectRef)
 {
+	ZEntityRef parentEntity;
+
 	// Add entity to track
 	auto it = m_EntitiesToTrack.find((*entityRef.m_pEntity)->m_nEntityId);
 	if (it == m_EntitiesToTrack.end())
@@ -439,8 +514,17 @@ void LogPins::UpdateTrackableMap(ZEntityRef entityRef) // , const ZObjectRef& ob
 					propRef = propValue;
 				}
 				*/
+				if (propName == "m_eidParent")
+				{
+					auto propValue = reinterpret_cast<ZEntityRef*>(reinterpret_cast<uintptr_t>(entityRef.m_pEntity) + prop.m_nOffset);
 
-				if (propTypeName.starts_with("TEntityRef<") && propTypeName.ends_with("Entity>")) // == "TEntityRef<ZSpatialEntity>")
+					auto propEnt = propValue->m_pEntity;
+					if (propEnt != nullptr)
+					{
+						parentEntity = *propValue;
+					}
+				}
+				else if (propTypeName.starts_with("TEntityRef<") && propTypeName.ends_with("Entity>")) // == "TEntityRef<ZSpatialEntity>")
 				{
 					auto propValue = reinterpret_cast<ZEntityRef*>(reinterpret_cast<uintptr_t>(entityRef.m_pEntity) + prop.m_nOffset);
 
@@ -478,6 +562,11 @@ void LogPins::UpdateTrackableMap(ZEntityRef entityRef) // , const ZObjectRef& ob
 		}
 
 		m_EntityMutex.unlock();
+
+		if (parentEntity)
+		{
+			UpdateTrackableMap(parentEntity);
+		}
 	}
 }
 

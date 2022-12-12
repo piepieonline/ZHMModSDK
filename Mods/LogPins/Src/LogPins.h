@@ -17,6 +17,7 @@ public:
 	void Init() override;
 	void OnDraw3D(IRenderer* p_Renderer) override;
 	void OnDrawMenu() override;
+	void OnDrawUI(bool p_HasFocus) override;
 
 private:
 	DEFINE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef, uint32_t, const ZObjectRef&);
@@ -36,6 +37,9 @@ private:
 	void DumpDetails(ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef);
 	int AddToSendList(std::string);
 	void ProcessSocketMessageQueue();
+
+	bool m_HoldingMouse = false;
+	void OnMouseDown(SVector2 p_Pos, bool p_FirstClick);
 
 	static void SendToSocketThread();
 	static void ReceiveFromSocketThread();
