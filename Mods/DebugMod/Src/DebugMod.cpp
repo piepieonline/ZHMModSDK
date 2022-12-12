@@ -63,6 +63,7 @@ void DebugMod::OnDrawMenu()
 		m_MenuActive = !m_MenuActive;
 	}
 
+	/*
 	if (ImGui::Button("SPAWN CANON"))
 	{
 		auto s_Scene = Globals::Hitman5Module->m_pEntitySceneContext->m_pScene;
@@ -92,7 +93,7 @@ void DebugMod::OnDrawMenu()
 			TResourcePtr<ZTemplateEntityFactory> s_BrickResource;
 			Globals::ResourceManager->GetResourcePtr(s_BrickResource, s_BrickID, 0);
 
-			Logger::Debug("Brick resource: {} {}", s_BrickResource.m_nResourceIndex, fmt::ptr(s_BrickResource.GetResource()));*/
+			Logger::Debug("Brick resource: {} {}", s_BrickResource.m_nResourceIndex, fmt::ptr(s_BrickResource.GetResource()));*
 
 			if (!s_Resource)
 			{
@@ -165,10 +166,86 @@ void DebugMod::OnDrawMenu()
 
 					m_SelectedEntity = s_NewEntity;
 
-					m_EntityMutex.unlock();*/
+					m_EntityMutex.unlock();*
 				}
 			}
 		}
+	}
+	*/
+
+	if (ImGui::Button("SELECT PARENT"))
+	{
+		m_EntityMutex.lock();
+
+		// m_SelectedEntity = m_SelectedEntity.
+
+		// Add any referenced entities
+		TArray<ZEntityProperty>* props = (*m_SelectedEntity.m_pEntity)->m_pProperties01;
+
+		if (props != nullptr)
+		{
+			for (auto prop : *props)
+			{
+				if (prop.m_pType == nullptr || prop.m_pType->getPropertyInfo() == nullptr) continue;
+				auto propInfo = prop.m_pType->getPropertyInfo();
+
+				std::string propName, propTypeName;
+				bool validPropName = false;
+				[&]()
+				{
+					__try
+					{
+						[&]()
+						{
+							propName = propInfo->m_pName;
+							propTypeName = propInfo->m_pType->typeInfo()->m_pTypeName;
+							validPropName = true;
+						}();
+					}
+					__except (EXCEPTION_EXECUTE_HANDLER)
+					{
+						propTypeName = "";
+					}
+				}();
+
+				if (propTypeName.empty() || !validPropName) continue;
+
+				
+				if (propName == "m_eidParent")
+				{
+					Logger::Debug("parent type {}.", propTypeName);
+					Logger::Debug(fmt::format("Selected Entity ID: {:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId).c_str());
+
+					auto propValue = reinterpret_cast<ZEntityRef*>(reinterpret_cast<uintptr_t>(m_SelectedEntity.m_pEntity) + prop.m_nOffset);
+
+					auto propEnt = propValue->m_pEntity;
+					if (propEnt == nullptr) continue;
+
+					m_SelectedEntity = *propValue;
+
+					Logger::Debug(fmt::format("Newly Selected Entity ID: {:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId).c_str());
+
+					// auto* propValue = reinterpret_cast<TArray<ZEntityRef>*>(reinterpret_cast<uintptr_t>(m_SelectedEntity.m_pEntity) + prop.m_nOffset);
+
+					// propValue->clear();
+					// propValue->push_back(*propRef->begin());
+
+					// propValue[0] = propRef[0];
+
+					// auto val = propValue[0];
+
+					// propValue->clear();
+					// propValue->resize(0);
+
+					// (*propValue) = *arr;
+
+					// entityRef.SetProperty(propName.c_str(), *propRef);
+				}
+			}
+		}
+
+
+		m_EntityMutex.unlock();
 	}
 }
 
