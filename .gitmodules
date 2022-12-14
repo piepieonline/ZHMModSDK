@@ -19,6 +19,6 @@
 [submodule "External/zlib"]
 	path = External/zlib
 	url = https://github.com/madler/zlib.git
-[submodule "Mods"]
-	path = Mods
+[submodule "ModsPrivate"]
+	path = ModsPrivate
 	url = https://github.com/piepieonline/ZHMModSDK-private-mods.git
