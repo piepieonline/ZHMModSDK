@@ -43,6 +43,7 @@ add_subdirectory("Mods/FreeCam")
 add_subdirectory("Mods/DiscordRichPresence")
 add_subdirectory("Mods/LogPins")
 add_subdirectory("Mods/OnlineJsonMods")
+add_subdirectory("Mods/FreelancerVariations")
 
 # Tools.
 add_subdirectory("Tools/DevLoader")
@@ -63,6 +64,7 @@ add_dependencies(DevLoader
 	DiscordRichPresence
 	LogPins
 	OnlineJsonMods
+	FreelancerVariations
 )
 
 if (EXISTS "${INSTALL_PATH}")
@@ -70,7 +72,7 @@ if (EXISTS "${INSTALL_PATH}")
 		RUNTIME DESTINATION "${INSTALL_PATH}"
 	)
 
-	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins OnlineJsonMods
+	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins OnlineJsonMods FreelancerVariations
 		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
 	)
 endif()
