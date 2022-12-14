@@ -42,8 +42,8 @@ add_subdirectory("Mods/AdvancedRating")
 add_subdirectory("Mods/FreeCam")
 add_subdirectory("Mods/DiscordRichPresence")
 add_subdirectory("Mods/LogPins")
-add_subdirectory("Mods/OnlineJsonMods")
-add_subdirectory("Mods/FreelancerVariations")
+add_subdirectory("ModsPrivate/OnlineJsonMods")
+add_subdirectory("ModsPrivate/FreelancerVariations")
 
 # Tools.
 add_subdirectory("Tools/DevLoader")
