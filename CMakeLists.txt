@@ -11,6 +11,8 @@ set(INSTALL_PATH "" CACHE PATH "Path to Hitman 3 retail folder to install the SD
 
 set(CMAKE_CXX_STANDARD 23)
 
+set(ZLIB_USE_STATIC_LIBS "ON")
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(VCPKG_CRT_LINKAGE "static")
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
