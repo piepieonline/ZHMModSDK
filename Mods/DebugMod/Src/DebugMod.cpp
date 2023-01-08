@@ -308,6 +308,13 @@ void DebugMod::OnDrawUI(bool p_HasFocus)
 		{
 			m_GizmoSpace = m_GizmoSpace == ImGuizmo::WORLD ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 		}
+
+		if (ImGui::IsKeyPressed(s_ImgGuiIO.KeyMap[ImGuiKey_Backspace]))
+		{
+			m_EntityMutex.lock();
+			m_SelectedEntity = ZEntityRef();
+			m_EntityMutex.unlock();
+		}
 	}
 
 	ImGuizmo::Enable(p_HasFocus);
