@@ -636,8 +636,28 @@ void DebugMod::DrawEntityBox(bool p_HasFocus)
 
 			for (const auto& s_Property : *(*m_SelectedEntity.m_pEntity)->m_pProperties01)
 			{
-				if (!s_Property.m_pType->getPropertyInfo()->m_pName)
-					continue;
+				if (s_Property.m_pType == nullptr || s_Property.m_pType->getPropertyInfo() == nullptr) continue;
+				auto propInfo = s_Property.m_pType->getPropertyInfo();
+
+				std::string propName = "";
+				bool validPropName = false;
+				[&]()
+				{
+					__try
+					{
+						[&]()
+						{
+							propName = propInfo->m_pName;
+							validPropName = true;
+						}();
+					}
+					__except (EXCEPTION_EXECUTE_HANDLER)
+					{
+						
+					}
+				}();
+
+				if (propName.empty() || !validPropName) continue;
 
 				if (!s_Properties01.empty())
 					s_Properties01 += ", ";
@@ -651,8 +671,28 @@ void DebugMod::DrawEntityBox(bool p_HasFocus)
 
 			for (const auto& s_Property : *(*m_SelectedEntity.m_pEntity)->m_pProperties02)
 			{
-				if (!s_Property.m_pType->getPropertyInfo()->m_pName)
-					continue;
+				if (s_Property.m_pType == nullptr || s_Property.m_pType->getPropertyInfo() == nullptr) continue;
+				auto propInfo = s_Property.m_pType->getPropertyInfo();
+
+				std::string propName = "";
+				bool validPropName = false;
+				[&]()
+				{
+					__try
+					{
+						[&]()
+						{
+							propName = propInfo->m_pName;
+							validPropName = true;
+						}();
+					}
+					__except (EXCEPTION_EXECUTE_HANDLER)
+					{
+
+					}
+				}();
+
+				if (propName.empty() || !validPropName) continue;
 
 				if (!s_Properties02.empty())
 					s_Properties02 += ", ";
