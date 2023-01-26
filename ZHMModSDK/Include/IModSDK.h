@@ -1,5 +1,6 @@
 #pragma once
 
+#include <d3d12.h>
 #include "Glacier/ZPrimitives.h"
 #include "Common.h"
 #include "imgui.h"

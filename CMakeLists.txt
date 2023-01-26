@@ -4,9 +4,8 @@ if(POLICY CMP0091)
 	cmake_policy(SET CMP0091 NEW)
 endif()
 
-project(ZHMMods CXX)
+project(ZHMMods CXX C)
 
-set(CTT OFF CACHE BOOL "Build with support for the Hitman 3 CTT.")
 set(INSTALL_PATH "" CACHE PATH "Path to Hitman 3 retail folder to install the SDK in.")
 
 set(CMAKE_CXX_STANDARD 23)
@@ -21,11 +20,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # Dependencies.
-add_subdirectory("External/spdlog")
-add_subdirectory("External/minhook")
+find_package(7zip CONFIG REQUIRED)
+find_package(directxtk12 CONFIG REQUIRED)
+find_package(minhook CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 add_subdirectory("External/imgui")
 add_subdirectory("External/imguizmo")
-add_subdirectory("External/DirectXTK12")
 add_subdirectory("External/zlib")
 
 # Core modules.

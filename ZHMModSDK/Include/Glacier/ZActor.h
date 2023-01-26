@@ -6,6 +6,8 @@
 #include "ZHM5BaseCharacter.h"
 #include "ZResource.h"
 
+#include <Logging.h>
+
 class ZCharacterTemplateAspect;
 class ZCostumeFeatureCollection;
 class ZAccessoryItemPool;
@@ -157,7 +159,9 @@ public:
 	bool m_bEnableOutfitModifiers; // 0x4BD
 	TEntityRef<ZAIVisionConfigurationEntity> m_AgentVisionConfiguration; // 0x4C0
 	TEntityRef<ZHTNDomainEntity> m_DomainConfig; // 0x4D0
-	PAD(0xBC8); // 0x4E0
+	PAD(0xB08); // 0x4E0
+	TEntityRef<ZGlobalOutfitKit> m_rOutfit; //0xFE8
+	PAD(0xB0); // 0xFF8
 	ZAnimatedActor* m_pAnimatedActor; // 0x10A8
 	PAD(0xA8);
 	bool m_bUnk0 : 1; // 0x1158
@@ -272,13 +276,8 @@ public:
 
 
 public:
-#if CTT
 	PAD(0x1F60);
 	TEntityRef<ZActor> m_aActiveActors[1000]; // 0x1F68, ZActorManager destructor, last if
-#else
-	PAD(0x25A0);
-	TEntityRef<ZActor> m_aActiveActors[1000]; // 0x25A8, ZActorManager destructor, last if
-#endif
 	/*PAD(0xAA20); // 0x5DE8
 	ZActorSavableHandler* m_pSavableHandler; // 0x10808*/
 };

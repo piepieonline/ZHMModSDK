@@ -5,7 +5,8 @@ file(GLOB_RECURSE SRC_FILES
 	Src/*.cpp
 	Src/*.c
 	Src/*.hpp
-	Src/*.h
+	Src/*.h,
+	Include/*.h
 )
 
 add_library(ZHMModSDK SHARED
@@ -25,15 +26,11 @@ target_compile_definitions(ZHMModSDK PRIVATE
 	LOADER_EXPORTS
 )
 
-if (CTT)
-	target_compile_definitions(ZHMModSDK PUBLIC CTT)
-endif()
-
 target_link_libraries(ZHMModSDK PUBLIC
-	minhook
-	spdlog_header_only
+	minhook::minhook
+	spdlog::spdlog_header_only
+	Microsoft::DirectXTK12
 	imgui
-	DirectXTK12
 	d3d12.lib
 	dxgi.lib
 	dxguid.lib

@@ -4,8 +4,7 @@
 
 #include "Common.h"
 
-#include "spdlog/logger.h"
-#include "spdlog/fmt/ostr.h"
+#include "spdlog/spdlog.h"
 
 #include "Glacier/ZString.h"
 
@@ -17,51 +16,50 @@ struct LoggerList
 
 ZHMSDK_API LoggerList GetLoggers();
 
-class Logger
+namespace Logger
 {
-public:
 	template <typename... Args>
-	static void Error(const char* p_Format, const Args&... p_Args)
+	inline void Error(spdlog::format_string_t<Args...> p_Format, const Args&... p_Args)
 	{
 		const auto s_Loggers = GetLoggers();
 
 		for (size_t i = 0; i < s_Loggers.Count; ++i)
-			s_Loggers.Loggers[i]->log(spdlog::level::err, p_Format, std::move(p_Args)...);
+			s_Loggers.Loggers[i]->error(fmt::runtime(p_Format), p_Args...);
 	}
 
 	template <typename... Args>
-	static void Warn(const char* p_Format, const Args&... p_Args)
+	inline void Warn(spdlog::format_string_t<Args...> p_Format, const Args&... p_Args)
 	{
 		const auto s_Loggers = GetLoggers();
 
 		for (size_t i = 0; i < s_Loggers.Count; ++i)
-			s_Loggers.Loggers[i]->log(spdlog::level::warn, p_Format, std::move(p_Args)...);
+			s_Loggers.Loggers[i]->warn(fmt::runtime(p_Format), p_Args...);
 	}
 
 	template <typename... Args>
-	static void Info(const char* p_Format, const Args&... p_Args)
+	inline void Info(spdlog::format_string_t<Args...> p_Format, const Args&... p_Args)
 	{
 		const auto s_Loggers = GetLoggers();
 
 		for (size_t i = 0; i < s_Loggers.Count; ++i)
-			s_Loggers.Loggers[i]->log(spdlog::level::info, p_Format, std::move(p_Args)...);
+			s_Loggers.Loggers[i]->info(fmt::runtime(p_Format), p_Args...);
 	}
 
 	template <typename... Args>
-	static void Debug(const char* p_Format, const Args&... p_Args)
+	inline void Debug(spdlog::format_string_t<Args...> p_Format, const Args&... p_Args)
 	{
 		const auto s_Loggers = GetLoggers();
 
 		for (size_t i = 0; i < s_Loggers.Count; ++i)
-			s_Loggers.Loggers[i]->log(spdlog::level::debug, p_Format, std::move(p_Args)...);
+			s_Loggers.Loggers[i]->debug(fmt::runtime(p_Format), p_Args...);
 	}
 
 	template <typename... Args>
-	static void Trace(const char* p_Format, const Args&... p_Args)
+	inline void Trace(spdlog::format_string_t<Args...> p_Format, const Args&... p_Args)
 	{
 		const auto s_Loggers = GetLoggers();
 
 		for (size_t i = 0; i < s_Loggers.Count; ++i)
-			s_Loggers.Loggers[i]->log(spdlog::level::trace, p_Format, std::move(p_Args)...);
+			s_Loggers.Loggers[i]->trace(fmt::runtime(p_Format), p_Args...);
 	}
 };
