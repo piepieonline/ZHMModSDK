@@ -46,6 +46,7 @@ add_subdirectory("Mods/DiscordRichPresence")
 add_subdirectory("Mods/LogPins")
 add_subdirectory("ModsPrivate/OnlineJsonMods")
 add_subdirectory("ModsPrivate/FreelancerVariations")
+add_subdirectory("ModsPrivate/VRLancer")
 
 # Tools.
 add_subdirectory("Tools/DevLoader")
@@ -67,6 +68,7 @@ add_dependencies(DevLoader
 	LogPins
 	OnlineJsonMods
 	FreelancerVariations
+	VRLancer
 )
 
 if (EXISTS "${INSTALL_PATH}")
@@ -74,7 +76,7 @@ if (EXISTS "${INSTALL_PATH}")
 		RUNTIME DESTINATION "${INSTALL_PATH}"
 	)
 
-	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins OnlineJsonMods FreelancerVariations
+	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins OnlineJsonMods FreelancerVariations VRLancer
 		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
 	)
 endif()
