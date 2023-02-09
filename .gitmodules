@@ -7,6 +7,9 @@
 [submodule "External/vcpkg"]
 	path = External/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "External/IconFontCppHeaders"]
+	path = External/IconFontCppHeaders
+	url = https://github.com/juliettef/IconFontCppHeaders.git
 [submodule "External/zlib"]
 	path = External/zlib
 	url = https://github.com/madler/zlib.git
