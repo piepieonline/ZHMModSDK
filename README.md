@@ -52,6 +52,5 @@ TODO
 
 ## Usage (for developers)
 
-TODO
-
+cmake --preset x64-Debug -G "Visual Studio 17 2022"
 
