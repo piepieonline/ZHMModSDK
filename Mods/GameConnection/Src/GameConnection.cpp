@@ -270,8 +270,8 @@ void GameConnection::ProcessSocketMessageQueue()
 
 				s_HitmanSpatial->SetWorldMatrix(matrix);
 
-				s_LocalHitman.m_ref.GetBaseEntity()->Deactivate(0);
-				s_LocalHitman.m_ref.GetBaseEntity()->Activate(0);
+				s_LocalHitman.m_ref->Deactivate(0);
+				s_LocalHitman.m_ref->Activate(0);
 			}
 			else if (params[0] == "SetHighlightColour")
 			{

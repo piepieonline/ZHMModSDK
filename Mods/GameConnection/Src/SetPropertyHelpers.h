@@ -186,8 +186,8 @@ inline void SetPropertyFromString(ZEntityRef entity, std::string propName, std::
 			// Set property doesn't seem to work on enums. So override the pointer value instead
 			OverrideEnumPropValue(entity, propName, enumValueAsInt);
 			// entity.SetProperty(propName.c_str(), enumValueAsInt);
-			entity.GetBaseEntity()->Deactivate(0);
-			entity.GetBaseEntity()->Activate(0);
+			entity->Deactivate(0);
+			entity->Activate(0);
 			break;
 		}
 		case PropTypes::t_int:

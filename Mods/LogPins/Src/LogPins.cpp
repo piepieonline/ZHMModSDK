@@ -243,7 +243,7 @@ void LogPins::ProcessSocketMessageQueue()
 				Functions::ZPlayerRegistry_GetLocalPlayer->Call(Globals::PlayerRegistry, &s_LocalHitman);
 				const auto s_HitmanSpatial = s_LocalHitman.m_ref.QueryInterface<ZSpatialEntity>();
 
-				s_LocalHitman.m_ref.GetBaseEntity()->Deactivate(6000);
+				s_LocalHitman.m_ref->Deactivate(6000);
 
 				s_HitmanSpatial->m_mTransform = EularToMatrix43(
 					std::stoul(params[2]),
