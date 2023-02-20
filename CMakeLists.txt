@@ -10,8 +10,6 @@ set(INSTALL_PATH "" CACHE PATH "Path to Hitman 3 retail folder to install the SD
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(ZLIB_USE_STATIC_LIBS "ON")
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	set(VCPKG_CRT_LINKAGE "static")
 	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -27,37 +25,13 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(directx-headers CONFIG REQUIRED)
 add_subdirectory("External/imgui")
 add_subdirectory("External/imguizmo")
-add_subdirectory("External/zlib")
 
 # Core modules.
 add_subdirectory("ZHMModSDK")
 add_subdirectory("DirectInputProxy")
 
 # Mods.
-add_subdirectory("Mods/WakingUpNpcs")
-add_subdirectory("Mods/NoPause")
-add_subdirectory("Mods/SkipIntro")
-add_subdirectory("Mods/CodeGen")
-add_subdirectory("Mods/CertPinBypass")
-add_subdirectory("Mods/MaxPatchLevel")
-add_subdirectory("Mods/DebugMod")
-add_subdirectory("Mods/AdvancedRating")
-add_subdirectory("Mods/FreeCam")
-add_subdirectory("Mods/DiscordRichPresence")
-add_subdirectory("Mods/LogPins")
-add_subdirectory("Mods/GameConnection")
-add_subdirectory("ModsPrivate/OnlineJsonMods")
-add_subdirectory("ModsPrivate/FreelancerVariations")
-add_subdirectory("ModsPrivate/VRLancer")
-add_subdirectory("ModsPrivate/CustomSuitLoader")
-
-# Tools.
-add_subdirectory("Tools/DevLoader")
-
-# Make sure to compile everything before the devloader.
-add_dependencies(DevLoader 
-	DirectInputProxy 
-	ZHMModSDK 
+set(MODS
 	WakingUpNpcs
 	NoPause
 	SkipIntro
@@ -68,12 +42,22 @@ add_dependencies(DevLoader
 	AdvancedRating
 	FreeCam
 	DiscordRichPresence
-	LogPins
-	GameConnection
-	OnlineJsonMods
-	FreelancerVariations
-	VRLancer
-	CustomSuitLoader
+	Editor
+	Clumsy
+)
+
+foreach(MOD IN LISTS MODS)
+	add_subdirectory("Mods/${MOD}")
+endforeach()
+
+# Tools.
+add_subdirectory("Tools/DevLoader")
+
+# Make sure to compile everything before the devloader.
+add_dependencies(DevLoader 
+	DirectInputProxy 
+	ZHMModSDK 
+	${MODS}
 )
 
 if (EXISTS "${INSTALL_PATH}")
@@ -81,7 +65,7 @@ if (EXISTS "${INSTALL_PATH}")
 		RUNTIME DESTINATION "${INSTALL_PATH}"
 	)
 
-	install(TARGETS WakingUpNpcs NoPause SkipIntro CodeGen CertPinBypass MaxPatchLevel DebugMod AdvancedRating FreeCam DiscordRichPresence LogPins GameConnection OnlineJsonMods FreelancerVariations VRLancer CustomSuitLoader
+	install(TARGETS ${MODS}
 		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
 	)
 endif()

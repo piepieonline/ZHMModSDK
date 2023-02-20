@@ -11,10 +11,12 @@ add_library(imgui STATIC
 	source/imstb_textedit.h
 	source/imstb_truetype.h
 	source/imgui_demo.cpp
-	source/backends/imgui_impl_dx12.cpp
-	source/backends/imgui_impl_dx12.h
 )
 
 target_include_directories(imgui PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/source
+)
+
+add_executable(binary_to_compressed_c
+	source/misc/fonts/binary_to_compressed_c.cpp
 )
