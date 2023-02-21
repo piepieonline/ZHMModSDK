@@ -59,6 +59,9 @@ jobs:
         mkdir _dist/mods
         Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".dll")) -Destination (Join-Path "_dist/mods"  ($_.Name + ".dll")) }
         Get-ChildItem -Directory Mods | ForEach-Object { Copy-Item (Join-Path $_.FullName ($_.Name + ".pdb")) -Destination (Join-Path "_dist/mods"  ($_.Name + ".pdb")) }
+        # Copy some private mods
+        Copy-Item ModsPrivate/FreelancerVariations.dll -Destination _dist/mods
+        Copy-Item ModsPrivate/FreelancerVariations.pdb -Destination _dist/mods
 
     - name: Copy SDK dev artifacts
       run: |
