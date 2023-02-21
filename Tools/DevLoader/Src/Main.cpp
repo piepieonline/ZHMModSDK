@@ -9,9 +9,9 @@ int main(int argc, char* argv[])
     // NOTE: This app assumes that it's launched from its build directory.
     // If it isn't then the copying steps will fail.
 
-    std::string s_HitmanPathStr = "O:\\Games\\HITMAN3";
-    std::string s_EpicUsername = "NoFaTe";
-    std::string s_EpicUserId = "29438d6d19854c498ff2e7b77e2e5c07";
+	std::string s_HitmanPathStr = "D:\\Games\\Xbox\\PC - HITMAN 3 - Base Game\\Content";
+	std::string s_EpicUsername = "NoFaTe";
+	std::string s_EpicUserId = "29438d6d19854c498ff2e7b77e2e5c07";
 
     // Get cmd-line args
     bool s_BadArgs = false;
@@ -79,13 +79,25 @@ int main(int argc, char* argv[])
 
     std::filesystem::path s_LoaderPath(s_LoaderPathStr);
     auto s_LoaderDir = s_LoaderPath.parent_path();
+    auto s_buildConfig = s_LoaderPath.parent_path().filename().string();
 
-    auto s_DinputPath = s_LoaderDir / "../../DirectInputProxy/dinput8.dll";
-    auto s_ModSDKPath = s_LoaderDir / "../../ZHMModSDK/ZHMModSDK.dll";
-    auto s_ModsPath = s_LoaderDir / "../../Mods";
+    auto s_DinputRelativePath = "../../../DirectInputProxy/" + s_buildConfig + "/dinput8.dll";
+    auto s_ModSDKRelativePath = "../../../ZHMModSDK/" + s_buildConfig + "/ZHMModSDK.dll";
 
-    if (!is_regular_file(s_DinputPath) || !is_regular_file(s_ModSDKPath) || !is_directory(s_ModsPath))
-        return 1;
+    auto s_DinputPath = s_LoaderDir / s_DinputRelativePath;
+    auto s_ModSDKPath = s_LoaderDir / s_ModSDKRelativePath;
+    auto s_ModsPath = s_LoaderDir / "../../../Mods";
+	auto s_PrivateModsPath = s_LoaderDir / "../../../ModsPrivate";
+
+	if (!is_regular_file(s_DinputPath) || !is_regular_file(s_ModSDKPath) || !is_directory(s_ModsPath) || !is_directory(s_PrivateModsPath))
+	{
+		std::cerr << "Unknown path to built files" << std::endl
+			<< is_regular_file(s_DinputPath) << std::endl
+			<< is_regular_file(s_ModSDKPath) << std::endl
+			<< is_directory(s_ModsPath) << std::endl
+			<< is_directory(s_PrivateModsPath) << std::endl;
+		return 1;
+	}
 
     bool s_ShouldReload = false;
 
@@ -133,26 +145,37 @@ int main(int argc, char* argv[])
         copy(s_Entry.path(), s_HitmanPath / "Retail/mods/" / s_Entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
     }
 
-    if (s_ShouldReload)
-    {
-        // If we need to reload just signal the reload event and let the
-        // SDK loader handle the rest.
-        auto* s_ReloadEvent = OpenEventA(EVENT_MODIFY_STATE, false, "Global_ZHMSDK_Reload_Signal");
+	for (const auto& s_Entry : std::filesystem::recursive_directory_iterator(s_PrivateModsPath))
+	{
+		if (!s_Entry.is_regular_file())
+			continue;
+
+		if (s_Entry.path().extension() != ".dll")
+			continue;
+
+		copy(s_Entry.path(), s_HitmanPath / "Retail/mods/" / s_Entry.path().filename(), std::filesystem::copy_options::overwrite_existing);
+	}
+
+	if (s_ShouldReload)
+	{
+		// If we need to reload just signal the reload event and let the
+		// SDK loader handle the rest.
+		auto* s_ReloadEvent = OpenEventA(EVENT_MODIFY_STATE, false, "Global_ZHMSDK_Reload_Signal");
 
         if (s_ReloadEvent == nullptr)
             return 1;
 
         SetEvent(s_ReloadEvent);
 
-        CloseHandle(s_ReloadEvent);
-    }
-    else
-    {
-        // Otherwise we need to start HITMAN3.exe.
-        std::string s_ApplicationPath = absolute(s_HitmanPath / "Retail/HITMAN3.exe").string();
-        std::string s_ApplicationDir = absolute(s_HitmanPath / "Retail").string();
+		CloseHandle(s_ReloadEvent);
+	}
+	else
+	{
+		// Otherwise we need to start HITMAN3.exe.
+		std::string s_ApplicationPath = absolute(s_HitmanPath / "Retail/Launcher.exe").string();
+		std::string s_ApplicationDir = absolute(s_HitmanPath / "Retail").string();
 
-        std::string s_CommandLine = "-epicapp=Eider -epicenv=Prod -EpicPortal -epicusername=" + s_EpicUsername + " -epicuserid=" + s_EpicUserId + " -epiclocale=en";
+		std::string s_CommandLine = ""; // "-epicapp=Eider -epicenv=Prod -EpicPortal -epicusername=" + s_EpicUsername + " -epicuserid=" + s_EpicUserId + " -epiclocale=en";
 
         STARTUPINFO s_StartupInfo {};
         s_StartupInfo.cb = sizeof(s_StartupInfo);

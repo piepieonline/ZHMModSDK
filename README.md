@@ -3,10 +3,7 @@
 
 A modding SDK and mod loader for HITMAN 3.
 
-## Fork Note:
-This fork includes zlib, but it won't build by default. Once the repo and submodules have been pulled, `External\zlib\zconf.h.included` needs to be cloned and named `External\zlib\zconf.h`.
-
-![build status](https://github.com/OrfeasZ/ZHMModSDK/workflows/Build/badge.svg)
+![build status](https://github.com/piepieonline/ZHMModSDK/workflows/Build/badge.svg)
 
 ## Description
 
@@ -16,7 +13,7 @@ Right now it's at a very early stage, with only a few aspects of the engine expo
 
 ## Usage (mod loader & mods)
 
-1. Download the latest version of the mod loader and the mods by going [here](https://github.com/OrfeasZ/ZHMModSDK/releases/latest), and downloading `ZHMModSDK-Release.zip`. This zip file contains the mod loader and a few sample mods.
+1. Download the latest version of the mod loader and the mods by going [here](https://github.com/piepieonline/ZHMModSDK/releases/latest), and downloading `ZHMModSDK-Release.zip`. This zip file contains the mod loader and a few sample mods.
 
 2. Extract the contents of the `ZHMModSDK-Release.zip` archive to `<drive>:\Path\To\HITMAN3\Retail`, where `<drive>:\Path\To\HITMAN3` is the path to your Hitman 3 installation directory. This will be at `C:\Program Files\EpicGames\HITMAN3` or `C:\Program Files (x86)\Steam\steamapps\common\HITMAN 3` by default. Make sure that you extract the files in the `Retail` folder and not the root `HITMAN3` folder.
 

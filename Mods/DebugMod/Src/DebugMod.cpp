@@ -65,6 +65,79 @@ void DebugMod::OnFrameUpdate(const SGameUpdateEvent& p_UpdateEvent)
 
 void DebugMod::OnDrawMenu()
 {
+    if (ImGui::Button("SELECT PARENT"))
+    {
+        m_EntityMutex.lock();
+
+        // m_SelectedEntity = m_SelectedEntity.
+
+        // Add any referenced entities
+        TArray<ZEntityProperty>* props = (*m_SelectedEntity.m_pEntity)->m_pProperties01;
+
+        if (props != nullptr)
+        {
+            for (auto prop : *props)
+            {
+                if (prop.m_pType == nullptr || prop.m_pType->getPropertyInfo() == nullptr) continue;
+                auto propInfo = prop.m_pType->getPropertyInfo();
+
+                std::string propName, propTypeName;
+                bool validPropName = false;
+                [&]()
+                {
+                    __try
+                    {
+                        [&]()
+                        {
+                            propName = propInfo->m_pName;
+                            propTypeName = propInfo->m_pType->typeInfo()->m_pTypeName;
+                            validPropName = true;
+                        }();
+                    }
+                    __except (EXCEPTION_EXECUTE_HANDLER)
+                    {
+                        propTypeName = "";
+                    }
+                }();
+
+                if (propTypeName.empty() || !validPropName) continue;
+
+
+                if (propName == "m_eidParent")
+                {
+                    Logger::Debug("parent type {}.", propTypeName);
+                    Logger::Debug("Selected Entity ID: {:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId);
+
+                    auto propValue = reinterpret_cast<ZEntityRef*>(reinterpret_cast<uintptr_t>(m_SelectedEntity.m_pEntity) + prop.m_nOffset);
+
+                    auto propEnt = propValue->m_pEntity;
+                    if (propEnt == nullptr) continue;
+
+                    m_SelectedEntity = *propValue;
+
+                    Logger::Debug("Newly Selected Entity ID: {:016x}", (*m_SelectedEntity.m_pEntity)->m_nEntityId);
+
+                    // auto* propValue = reinterpret_cast<TArray<ZEntityRef>*>(reinterpret_cast<uintptr_t>(m_SelectedEntity.m_pEntity) + prop.m_nOffset);
+
+                    // propValue->clear();
+                    // propValue->push_back(*propRef->begin());
+
+                    // propValue[0] = propRef[0];
+
+                    // auto val = propValue[0];
+
+                    // propValue->clear();
+                    // propValue->resize(0);
+
+                    // (*propValue) = *arr;
+
+                    // entityRef.SetProperty(propName.c_str(), *propRef);
+                }
+            }
+        }
+        m_EntityMutex.unlock();
+    }
+
     if (ImGui::Button("DEBUG MENU"))
     {
         m_DebugMenuActive = !m_DebugMenuActive;
@@ -150,6 +223,13 @@ void DebugMod::OnDrawUI(bool p_HasFocus)
         if (ImGui::IsKeyPressed(s_ImgGuiIO.KeyMap[ImGuiKey_Space]))
         {
             m_GizmoSpace = m_GizmoSpace == ImGuizmo::WORLD ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+        }
+
+        if (ImGui::IsKeyPressed(s_ImgGuiIO.KeyMap[ImGuiKey_Backspace]))
+        {
+            m_EntityMutex.lock();
+            m_SelectedEntity = ZEntityRef();
+            m_EntityMutex.unlock();
         }
     }
 
@@ -319,7 +399,7 @@ void DebugMod::EquipOutfit(
 void DebugMod::EquipOutfit(
     const TEntityRef<ZGlobalOutfitKit>& p_GlobalOutfitKit,
     unsigned int p_CurrentCharSetIndex,
-    const char* p_CurrentCharSetCharacterType,
+    const char* p_CurrentCharSetCharacterType, 
     unsigned int p_CurrentOutfitVariationIndex,
     ZActor* p_Actor
 )

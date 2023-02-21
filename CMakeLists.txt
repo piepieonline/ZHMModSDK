@@ -25,6 +25,7 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(directx-headers CONFIG REQUIRED)
 add_subdirectory("External/imgui")
 add_subdirectory("External/imguizmo")
+add_subdirectory("External/zlib")
 
 # Core modules.
 add_subdirectory("ZHMModSDK")
@@ -44,10 +45,23 @@ set(MODS
 	DiscordRichPresence
 	Editor
 	Clumsy
+	LogPins
+	GameConnection
+)
+
+set(PRIVATE_MODS
+	OnlineJsonMods
+	FreelancerVariations
+	VRLancer
+	CustomSuitLoader
 )
 
 foreach(MOD IN LISTS MODS)
 	add_subdirectory("Mods/${MOD}")
+endforeach()
+
+foreach(MOD IN LISTS PRIVATE_MODS)
+	add_subdirectory("ModsPrivate/${MOD}")
 endforeach()
 
 # Tools.
@@ -66,6 +80,10 @@ if (EXISTS "${INSTALL_PATH}")
 	)
 
 	install(TARGETS ${MODS}
+		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
+	)
+
+	install(TARGETS ${PRIVATE_MODS}
 		RUNTIME DESTINATION "${INSTALL_PATH}/mods"
 	)
 endif()
