@@ -8,17 +8,14 @@ file(GLOB_RECURSE SRC_FILES
 	Src/*.h
 )
 
-add_library(Editor SHARED
+add_library(Noclip SHARED
 	${SRC_FILES}
 )
 
-target_include_directories(Editor PRIVATE
+target_include_directories(Noclip PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}/Src
 )
 
-target_link_libraries(Editor PRIVATE
+target_link_libraries(Noclip PRIVATE
 	ZHMModSDK
-	imguizmo
-	ws2_32
-#	TracyClient
 )

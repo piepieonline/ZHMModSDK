@@ -82,7 +82,7 @@ PATTERN_RELATIVE_FUNCTION(
     "\xE8\x00\x00\x00\x00\x48\x8B\x4C\x24\x38\x48\x85\xC9\x74\x00\x48\x81\xC1",
     "x????xxxxxxxxx?xxx",
     ZPlayerRegistry_GetLocalPlayer,
-    void(ZPlayerRegistry* th, TEntityRef<ZHitman5>* out)
+    TEntityRef<ZHitman5>*(ZPlayerRegistry* th, TEntityRef<ZHitman5>* out)
 );
 
 PATTERN_FUNCTION(
@@ -161,4 +161,18 @@ PATTERN_FUNCTION(
     "xxxxxxxxx?xxx",
     ZHM5Animator_ActivateRagdollToAnimationBlend,
     void(ZHM5Animator* th, float* time)
+);
+
+PATTERN_FUNCTION(
+    "\x40\x53\x55\x41\x57\x48\x83\xEC\x00\x48\x89\x74\x24\x60",
+    "xxxxxxxx?xxxxx",
+    ZHM5BaseCharacter_ActivatePoweredRagdoll,
+    void(ZHM5BaseCharacter* th, float time, bool inMotion, bool upperBody, float a5, bool a6)
+);
+
+PATTERN_FUNCTION(
+    "\x40\x57\x48\x83\xEC\x00\x80\xBC\x24\x90\x00\x00\x00",
+    "xxxxx?xxxxxxx",
+    ZRagdollHandler_ApplyImpulseOnRagdoll,
+    void(ZRagdollHandler* th, const float4& position, const float4& impulse, uint32_t boneIndex, bool randomize)
 );

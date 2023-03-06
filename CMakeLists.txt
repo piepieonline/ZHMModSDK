@@ -47,6 +47,7 @@ set(MODS
 	Clumsy
 	LogPins
 	GameConnection
+	Noclip
 )
 
 set(PRIVATE_MODS

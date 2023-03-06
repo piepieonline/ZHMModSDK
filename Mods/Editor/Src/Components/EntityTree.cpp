@@ -41,6 +41,9 @@ bool HasChildEntity(ZEntityRef p_Entity, ZEntityRef p_ChildEntity, IEntityBluepr
 
 void Editor::RenderEntity(int p_Index, ZEntityRef p_Entity, uint64_t p_EntityId, IEntityBlueprintFactory* p_Factory, ZTemplateEntityBlueprintFactory* p_BrickFactory, ZEntityRef p_BrickEntity)
 {
+    if (!p_Entity.GetEntity() || ! p_Entity->GetType())
+        return;
+
     const auto s_EntityTypeName = p_Entity.GetEntity()->GetType()->m_pInterfaces->operator[](0).m_pTypeId->typeInfo()->m_pTypeName;
     const auto s_EntityText = fmt::format("{}::{} ({:08x})", p_BrickFactory->m_pTemplateEntityBlueprint ? p_BrickFactory->m_pTemplateEntityBlueprint->subEntities[p_Index].entityName.c_str() : "<noname>", s_EntityTypeName, p_EntityId);
 
@@ -122,7 +125,14 @@ void Editor::RenderEntity(int p_Index, ZEntityRef p_Entity, uint64_t p_EntityId,
 
 void Editor::RenderBrick(ZEntityRef p_Entity)
 {
+    if (!p_Entity)
+        return;
+
     const auto s_BpFactory = reinterpret_cast<ZTemplateEntityBlueprintFactory*>(p_Entity.GetBlueprintFactory());
+
+    if (!s_BpFactory)
+        return;
+
     const auto s_SubEntityCount = s_BpFactory->GetSubEntitiesCount();
 
     //ImGui::Text(fmt::format("Brick Entity = {}, id = {:x}, bp = {}, sub = {}", fmt::ptr(p_Entity.GetEntity()), p_Entity->GetType()->m_nEntityId, fmt::ptr(s_BpFactory), s_SubEntityCount).c_str());
@@ -183,7 +193,39 @@ bool Editor::SearchForEntityById(ZTemplateEntityBlueprintFactory* p_BrickFactory
     }
 
     return false;
+}
 
+bool Editor::SearchForEntityByType(ZTemplateEntityBlueprintFactory* p_BrickFactory, ZEntityRef p_BrickEntity, const std::string& p_TypeName)
+{
+    if (!p_BrickFactory || !p_BrickEntity)
+        return false;
+    
+    for (int i = 0; i < p_BrickFactory->GetSubEntitiesCount(); ++i)
+    {
+        const auto& s_SubEntity = p_BrickFactory->GetSubEntity(p_BrickEntity.m_pEntity, i);
+
+        if (!s_SubEntity)
+            continue;
+
+        ZEntityRef s_Ref = s_SubEntity;
+
+        if (s_Ref.HasInterface(p_TypeName))
+        {
+            m_SelectedEntity = s_Ref;
+            m_ShouldScrollToEntity = true;
+            return true;
+        }
+
+        const auto s_SubFactory = p_BrickFactory->GetSubEntityBlueprint(i);
+
+        if (s_SubFactory && s_SubFactory->GetSubEntitiesCount() > 0)
+        {
+            if (SearchForEntityByType(reinterpret_cast<ZTemplateEntityBlueprintFactory*>(s_SubFactory), s_SubEntity, p_TypeName))
+                return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -198,16 +240,32 @@ void Editor::DrawEntityTree()
     if (s_SceneCtx && s_SceneCtx->m_pScene)
     {
         static char s_EntitySearchInput[17] = {};
-        if (ImGui::InputText(ICON_MD_SEARCH " Search for entity by ID", s_EntitySearchInput, IM_ARRAYSIZE(s_EntitySearchInput), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsNoBlank))
+        if (ImGui::InputText(ICON_MD_SEARCH " Search by ID", s_EntitySearchInput, IM_ARRAYSIZE(s_EntitySearchInput), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsNoBlank))
         {
             const auto s_EntityId = std::strtoull(s_EntitySearchInput, nullptr, 16);
 
             for (int i = 0; i < s_SceneCtx->m_aLoadedBricks.size(); ++i)
             {
                 const auto& s_Brick = s_SceneCtx->m_aLoadedBricks[i];
-                auto s_BpFactory = reinterpret_cast<ZTemplateEntityBlueprintFactory*>(s_Brick.entityRef.GetBlueprintFactory());
+                const auto s_BpFactory = reinterpret_cast<ZTemplateEntityBlueprintFactory*>(s_Brick.entityRef.GetBlueprintFactory());
 
                 if (SearchForEntityById(s_BpFactory, s_Brick.entityRef, s_EntityId))
+                {
+                    m_SelectedBrickIndex = i;
+                    break;
+                }
+            }
+        }
+
+        static char s_EntityTypeSearchInput[2048] = {};
+        if (ImGui::InputText(ICON_MD_SEARCH " Search by type", s_EntityTypeSearchInput, IM_ARRAYSIZE(s_EntityTypeSearchInput), ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            for (int i = 0; i < s_SceneCtx->m_aLoadedBricks.size(); ++i)
+            {
+                const auto& s_Brick = s_SceneCtx->m_aLoadedBricks[i];
+                const auto s_BpFactory = reinterpret_cast<ZTemplateEntityBlueprintFactory*>(s_Brick.entityRef.GetBlueprintFactory());
+
+                if (SearchForEntityByType(s_BpFactory, s_Brick.entityRef, s_EntityTypeSearchInput))
                 {
                     m_SelectedBrickIndex = i;
                     break;
