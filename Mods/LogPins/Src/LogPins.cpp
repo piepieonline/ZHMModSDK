@@ -570,7 +570,7 @@ void LogPins::UpdateTrackableMap(ZEntityRef entityRef) // , const ZObjectRef& ob
 	}
 }
 
-DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef)
+DEFINE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef)
 {
 	if (LogPins::sendingPinsEnabled)
 	{
@@ -596,8 +596,7 @@ DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef entityRef, uint3
 	return HookResult<bool>(HookAction::Continue());
 }
 
-DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalOutputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef)
-{
+DEFINE_PLUGIN_DETOUR(LogPins, bool, SignalOutputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef) {
 	if (LogPins::sendingPinsEnabled)
 	{
 		std::ostringstream ss;
@@ -623,4 +622,4 @@ DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalOutputPin, ZEntityRef entityRef, uint
 	return HookResult<bool>(HookAction::Continue());
 }
 
-DECLARE_ZHM_PLUGIN(LogPins);
+DEFINE_ZHM_PLUGIN(LogPins);

@@ -20,8 +20,8 @@ public:
 	void OnDrawUI(bool p_HasFocus) override;
 
 private:
-	DEFINE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef, uint32_t, const ZObjectRef&);
-	DEFINE_PLUGIN_DETOUR(LogPins, bool, SignalOutputPin, ZEntityRef, uint32_t, const ZObjectRef&);
+	DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalInputPin, ZEntityRef, uint32_t, const ZObjectRef&);
+	DECLARE_PLUGIN_DETOUR(LogPins, bool, SignalOutputPin, ZEntityRef, uint32_t, const ZObjectRef&);
 
 private:
 	std::unordered_map<std::string, bool> m_knownInputs;
@@ -67,4 +67,4 @@ private:
 	TArray<ZEntityRef>* propRef;
 };
 
-DEFINE_ZHM_PLUGIN(LogPins)
+DECLARE_ZHM_PLUGIN(LogPins)

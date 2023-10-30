@@ -19,8 +19,8 @@ public:
 	void OnDrawMenu() override;
 
 private:
-	DEFINE_PLUGIN_DETOUR(GameConnection, bool, SignalInputPin, ZEntityRef, uint32_t, const ZObjectRef&);
-	DEFINE_PLUGIN_DETOUR(GameConnection, bool, SignalOutputPin, ZEntityRef, uint32_t, const ZObjectRef&);
+	DECLARE_PLUGIN_DETOUR(GameConnection, bool, SignalInputPin, ZEntityRef, uint32_t, const ZObjectRef&);
+	DECLARE_PLUGIN_DETOUR(GameConnection, bool, SignalOutputPin, ZEntityRef, uint32_t, const ZObjectRef&);
 
 private:
 	struct sockaddr_in si_other;
@@ -61,4 +61,4 @@ private:
 	SVector4 highlightColour = SVector4(0.f, 0.f, 1.f, 1.f);
 };
 
-DEFINE_ZHM_PLUGIN(GameConnection)
+DECLARE_ZHM_PLUGIN(GameConnection)

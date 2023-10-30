@@ -538,18 +538,16 @@ void GameConnection::UpdateTrackableMap(ZEntityRef entityRef) // , const ZObject
 	}
 }
 
-DECLARE_PLUGIN_DETOUR(GameConnection, bool, SignalInputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef)
-{
+DEFINE_PLUGIN_DETOUR(GameConnection, bool, SignalInputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef) {
 	GameConnection::UpdateTrackableMap(entityRef);
 
 	return HookResult<bool>(HookAction::Continue());
 }
 
-DECLARE_PLUGIN_DETOUR(GameConnection, bool, SignalOutputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef)
-{
+DEFINE_PLUGIN_DETOUR(GameConnection, bool, SignalOutputPin, ZEntityRef entityRef, uint32_t pinId, const ZObjectRef& objectRef) {
 	GameConnection::UpdateTrackableMap(entityRef);
 
 	return HookResult<bool>(HookAction::Continue());
 }
 
-DECLARE_ZHM_PLUGIN(GameConnection);
+DEFINE_ZHM_PLUGIN(GameConnection);

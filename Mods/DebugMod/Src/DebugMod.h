@@ -65,7 +65,8 @@ private:
 
     void EnableInfiniteAmmo();
 
-    DEFINE_PLUGIN_DETOUR(DebugMod, void, OnClearScene, ZEntitySceneContext* th, bool fullyClear);
+    DECLARE_PLUGIN_DETOUR(DebugMod, void, OnLoadScene, ZEntitySceneContext*, ZSceneData&);
+    DECLARE_PLUGIN_DETOUR(DebugMod, void, OnClearScene, ZEntitySceneContext* th, bool forReload);
 
 private:
     bool m_DebugMenuActive = false;
@@ -119,6 +120,22 @@ private:
     inline static std::mutex m_Mutex;
 
     ZHM5CrippleBox* m_Hm5CrippleBox = nullptr;
+
+private:
+    ZActor* m_NPCTracked = nullptr;
+    bool m_TrackCamActive = false;
+    ZEntityRef m_PlayerCam = nullptr;
+    TEntityRef<ZCameraEntity> m_TrackCam = TEntityRef<ZCameraEntity>(nullptr);
+    TEntityRef<IRenderDestinationEntity> m_RenderDest = TEntityRef<IRenderDestinationEntity>(nullptr);
+
+private:
+    void EnableTrackCam();
+    void UpdateTrackCam();
+    void DisableTrackCam();
+    void GetPlayerCam();
+    void GetTrackCam();
+    void GetRenderDest();
+    void SetPlayerControlActive(bool active);
 };
 
-DEFINE_ZHM_PLUGIN(DebugMod)
+DECLARE_ZHM_PLUGIN(DebugMod)
