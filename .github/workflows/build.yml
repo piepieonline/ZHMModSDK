@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: windows-runner
+    runs-on: windows-latest
 
     steps:
     - name: Get latest CMake and ninja
