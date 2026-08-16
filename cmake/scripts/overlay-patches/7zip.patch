@@ -1,0 +1,15 @@
+--- a/portfile.cmake
++++ b/portfile.cmake
+@@ -17,6 +17,12 @@ file(COPY "${CMAKE_CURRENT_LIST_DIR}/7zip-config.cmake.in" DESTINATION "${SOURCE
+ vcpkg_cmake_configure(
+     SOURCE_PATH "${SOURCE_PATH}"
+     OPTIONS
++        # llvm-ml (our ml64 stand-in when cross-compiling from Linux) cannot
++        # assemble 7zip's MASM sources: it does not resolve `include 7zAsm.asm`
++        # relative to the including file, and chokes on the macro dialect even
++        # once that header is found. The port ships equivalent C implementations
++        # for every .asm file, so build those instead.
++        -DUSE_NO_ASM=ON
+         "-DVCPKG_TARGET_ARCHITECTURE=${VCPKG_TARGET_ARCHITECTURE}"
+ )
+ 

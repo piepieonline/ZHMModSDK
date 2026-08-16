@@ -9,7 +9,7 @@ UPSTREAM=External/vcpkg/ports
 OVERLAY=cmake/vcpkg-ports-cross
 PATCHES=cmake/scripts/overlay-patches
 
-PATCHED_PORTS=(fmt sentry-native)
+PATCHED_PORTS=(7zip fmt sentry-native)
 
 for p in "${PATCHED_PORTS[@]}"; do
     src="$UPSTREAM/$p"

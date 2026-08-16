@@ -51,7 +51,6 @@
 
             shellHook = ''
               export VCPKG_ROOT="$PWD/External/vcpkg"
-              export VCPKG_FORCE_SYSTEM_BINARIES=1
               export VCPKG_DISABLE_METRICS=1
               export XWIN_SPLAT_DIR="$PWD/.xwin/splat"
               export INCLUDE="$XWIN_SPLAT_DIR/crt/include;$XWIN_SPLAT_DIR/sdk/include/ucrt;$XWIN_SPLAT_DIR/sdk/include/um;$XWIN_SPLAT_DIR/sdk/include/shared;$XWIN_SPLAT_DIR/sdk/include/winrt"
@@ -67,7 +66,25 @@
               # Regenerate the vcpkg overlay ports
               bash cmake/scripts/sync-vcpkg-overlays.sh >/dev/null \
                 || echo "WARNING: sync-vcpkg-overlays.sh failed" >&2
-              ln -sfn "$(command -v vcpkg)" "$VCPKG_ROOT/vcpkg" 2>/dev/null || true
+              # The vcpkg registry checkout pins the tool release it expects; the
+              # nixpkgs vcpkg-tool lags behind and chokes on newer manifest schema
+              # versions. Only borrow it when the versions line up, otherwise let
+              # vcpkg bootstrap the release it asks for.
+              wantTag=$(sed -n 's/^VCPKG_TOOL_RELEASE_TAG=//p' \
+                "$VCPKG_ROOT/scripts/vcpkg-tool-metadata.txt" 2>/dev/null || true)
+              haveTag=$("$VCPKG_ROOT/vcpkg" version 2>/dev/null \
+                | sed -n 's/.*version \([0-9-]*\)-.*/\1/p' | head -n1 || true)
+              if [ -n "$wantTag" ] && [ "$haveTag" != "$wantTag" ]; then
+                nixTag=$(vcpkg version 2>/dev/null \
+                  | sed -n 's/.*version \([0-9-]*\)-.*/\1/p' | head -n1 || true)
+                if [ "$nixTag" = "$wantTag" ]; then
+                  ln -sfn "$(command -v vcpkg)" "$VCPKG_ROOT/vcpkg"
+                else
+                  rm -f "$VCPKG_ROOT/vcpkg"
+                  "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics >/dev/null \
+                    || echo "WARNING: bootstrap-vcpkg.sh failed" >&2
+                fi
+              fi
             '';
           };
         });

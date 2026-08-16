@@ -166,6 +166,16 @@ install(FILES "${VCPKG_BUILD_ROOT}/include/imconfig.h" DESTINATION include)
 install(FILES "${VCPKG_BUILD_ROOT}/include/imgui_stacklayout.h" DESTINATION include)
 install(FILES "${VCPKG_BUILD_ROOT}/include/imgui_stdlib.h" DESTINATION include)
 
+# Install implot lib and headers. IModSDK.h includes implot.h, so every mod that
+# consumes this dist needs both the headers and something to link `implot` against.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    install(FILES "${VCPKG_BUILD_ROOT}/debug/lib/implotd.lib" DESTINATION lib RENAME implot.lib)
+else ()
+    install(FILES "${VCPKG_BUILD_ROOT}/lib/implot.lib" DESTINATION lib)
+endif ()
+install(FILES "${VCPKG_BUILD_ROOT}/include/implot.h" DESTINATION include)
+install(FILES "${VCPKG_BUILD_ROOT}/include/implot_internal.h" DESTINATION include)
+
 # Install ResourceLib.
 install(TARGETS ResourceLib_HM3
         RUNTIME DESTINATION bin
